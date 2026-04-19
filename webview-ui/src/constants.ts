@@ -131,6 +131,7 @@ export const IDLE_CHAT_ATTEMPT_MIN_SEC = 0.5;
 export const IDLE_CHAT_ATTEMPT_MAX_SEC = 1.5;
 export const IDLE_CHAT_DURATION_SEC = 14.0;
 export const IDLE_CHAT_LINE_INTERVAL_SEC = 4.2;
+export const IDLE_CHAT_TURN_PAUSE_SEC = 1.0;
 export const IDLE_CHAT_COOLDOWN_MIN_SEC = 1.0;
 export const IDLE_CHAT_COOLDOWN_MAX_SEC = 3.0;
 export const IDLE_CHAT_MAX_DISTANCE_TILES = 8;

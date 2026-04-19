@@ -42,11 +42,16 @@
 
 - **一个 Agent，一个角色** —— 每个 Claude Code 会话都会变成办公室里的独立角色
 - **实时行为反馈** —— 角色会随着真实工作状态变化，写代码会打字，读文件会阅读，执行命令也会有对应表现
+- **内置终端与会话管理** —— 桌面端可以直接启动 Claude Code，会维护对应 PTY 终端输出，并支持向指定 agent 发送输入、关闭会话、聚焦窗口
+- **会话自动恢复** —— 应用启动后会从本地数据库恢复已记录的 agent 身份、名称、工作目录和最近一次关联信息，再重新拉起对应会话
 - **内置办公室编辑器** —— 直接在应用里调整地板、墙体和家具布局
-- **等待状态提示** —— 当 agent 等待输入或等待授权时，会用气泡等形式提示出来
+- **座位与角色外观持久化** —— 会保存每个 agent 的座位、调色板和色相偏移，下次打开应用时自动恢复
+- **设置持久化** —— 声音提醒、标签常显、监听全部会话、Hooks 开关、外部素材目录等设置都会保存在本地
+- **等待状态提示** —— 当 agent 等待输入或等待授权时，会用气泡等形式提示出来，并可触发桌面通知
 - **可选声音提醒** —— agent 一轮工作结束时可以播放提示音
+- **布局导入 / 导出** —— 可以把当前办公室布局导出为 JSON，也可以从 JSON 文件重新导入
+- **系统托盘与菜单** —— 支持托盘驻留、从托盘快速显示窗口或新建 agent，也提供桌面应用菜单入口
 - **子 Agent 可视化** —— Task 工具创建的子 agent 会以临时角色形式出现在办公室里，并和父角色关联
-- **布局持久化** —— 办公室布局会保存在本地，下次打开应用时自动恢复
 - **支持外部素材目录** —— 可以从你电脑上的任意目录加载自定义或第三方家具素材包
 - **多样角色形象** —— 当前内置 6 种不同角色形象，基于 [JIK-A-4, Metro City](https://jik-a-4.itch.io/metrocity-free-topdown-character-pack) 的优秀作品制作
 
@@ -115,14 +120,36 @@ npm run dist:win
 
 ## 工作原理
 
-`pixel-agents-electron` 会监听 Claude Code 的 JSONL transcript 文件，追踪每个 agent 当前在做什么。当 agent 调用工具，比如写文件、读取内容或运行命令时，桌面应用会实时更新角色动画和状态展示。整个过程不需要改动 Claude Code 本身。
+`pixel-agents-electron` 会直接从桌面端启动 Claude Code，并监听对应的 JSONL transcript 文件，追踪每个 agent 当前在做什么。当 agent 调用工具，比如写文件、读取内容或运行命令时，桌面应用会实时更新角色动画和状态展示。整个过程不需要改动 Claude Code 本身。
 
 前端界面运行的是一个轻量级 canvas 游戏循环，包含渲染、寻路和角色状态机（`idle → walk → type/read`），以像素风方式实时表现 agent 的活动。
+
+同时，Electron 主进程会维护一套本地持久化：用于保存 agent 身份、会话关联、办公室布局、座位分配和应用设置，这样应用重启后仍能恢复上一次的大部分工作状态。
+
+## 本地数据库与持久化
+
+当前 Electron 版本已经新增本地数据库，使用的是 **SQLite**，驱动为 **`better-sqlite3`**。
+
+数据库文件保存在 Electron 的用户数据目录下，文件名为 `pixel-agents.db`。启动时会自动初始化，并开启 `WAL` 日志模式。
+
+目前主要有两张表：
+
+- **`agents`** —— 保存 agent 持久化信息，包括 `uid`、`session_id`、`project_dir`、`workspace_dir`、`jsonl_file`、`folder_name`、自定义名称、角色配色、头像配置、memory，以及创建/更新时间
+- **`app_state`** —— 以 JSON 形式保存应用状态，包括办公室布局、agent 座位映射、应用设置，以及需要在下次启动时恢复的 agent UID 列表
+
+基于这套本地数据库，当前已经落地的能力包括：
+
+- 保存并恢复 agent 基础身份信息与关联会话信息
+- 保存并恢复布局、座位、角色外观参数
+- 保存并恢复声音提醒、标签显示、Hooks 开关、外部素材目录等设置
+- 记录需要在应用重启后自动恢复的 agent 列表
+- 作为 Electron 桌面端统一的本地状态存储，不再只依赖单独的 JSON 配置文件
 
 ## 技术栈
 
 - **桌面应用**：Electron、TypeScript、`node-pty`、`electron-builder`
 - **界面层**：React 19、TypeScript、Vite、Canvas 2D
+- **本地存储**：SQLite、`better-sqlite3`
 - **共享逻辑**：TypeScript、Claude transcript 解析、素材加载、持久化存储
 
 ## 已知限制
@@ -177,11 +204,16 @@ This project is a derivative work based on another author's excellent open-sourc
 
 - **One agent, one character** — every Claude Code session becomes its own animated office character
 - **Live activity feedback** — characters respond to real work in progress, such as writing, reading, and running commands
+- **Built-in terminal and session controls** — the desktop app can launch Claude Code directly, keep PTY terminal output attached to each agent, send input, close sessions, and focus the window
+- **Session restoration** — on startup, the app restores persisted agent identity, name, working directory, and prior linkage, then relaunches matching sessions
 - **Built-in office editor** — customize your workspace with floors, walls, and furniture inside the app
-- **Waiting indicators** — speech bubbles make it clear when an agent is waiting for input or permission
+- **Persisted seats and appearance** — each agent’s seat assignment, palette, and hue shift are stored locally and restored on the next launch
+- **Persisted app settings** — sound, always-show-labels, watch-all-sessions, hooks toggle, and external asset directories are saved locally
+- **Waiting indicators** — speech bubbles make it clear when an agent is waiting for input or permission, and desktop notifications can be shown
 - **Optional sound cues** — play a chime when an agent finishes a turn
+- **Layout import/export** — save the current office layout as JSON and import it back later
+- **Tray and menu integration** — keep the app in the system tray and quickly show the window or create a new agent
 - **Sub-agent presence** — Task tool sub-agents appear as temporary characters connected to their parent
-- **Saved layouts** — office layouts are stored locally and restored the next time you open the app
 - **External asset support** — load custom or third-party furniture packs from any folder on your machine
 - **A diverse cast of characters** — includes 6 character styles based on the amazing work of [JIK-A-4, Metro City](https://jik-a-4.itch.io/metrocity-free-topdown-character-pack).
 
@@ -250,14 +282,36 @@ Character sprites are based on the amazing work of [JIK-A-4, Metro City](https:/
 
 ## How It Works
 
-`pixel-agents-electron` watches Claude Code JSONL transcript files to understand what each agent is doing right now. When an agent uses tools such as writing files, reading content, or running commands, the desktop app updates that character's animation and status in real time. It works alongside Claude Code without requiring any modification to Claude Code itself.
+`pixel-agents-electron` launches Claude Code sessions directly from the desktop app and watches the matching JSONL transcript files to understand what each agent is doing right now. When an agent uses tools such as writing files, reading content, or running commands, the desktop app updates that character's animation and status in real time. It works alongside Claude Code without requiring any modification to Claude Code itself.
 
 The UI is powered by a lightweight canvas game loop with rendering, pathfinding, and a character state machine (`idle → walk → type/read`) so agent activity is presented in a lively pixel-art form.
+
+At the same time, the Electron main process maintains local persistence for agent identity, session linkage, office layout, seat assignments, and app settings, so most workspace state survives app restarts.
+
+## Local Database & Persistence
+
+The current Electron build includes a local database. It uses **SQLite** through **`better-sqlite3`**.
+
+The database file is stored in Electron’s user data directory as `pixel-agents.db`. It is initialized automatically on startup and uses `WAL` journal mode.
+
+There are currently two main tables:
+
+- **`agents`** — stores persisted agent data such as `uid`, `session_id`, `project_dir`, `workspace_dir`, `jsonl_file`, `folder_name`, custom name, palette, avatar config, memory, and timestamps
+- **`app_state`** — stores JSON-based application state such as office layout, agent seat mappings, app settings, and the list of agent UIDs that should be restored on next launch
+
+This local database currently powers:
+
+- persisted agent identity and session linkage
+- persisted layout, seat assignments, and appearance parameters
+- persisted sound, label visibility, hooks, and external asset directory settings
+- automatic restoration of selected agents after app restart
+- a unified local state store for the Electron app instead of relying only on standalone JSON config files
 
 ## Tech Stack
 
 - **Desktop app**: Electron, TypeScript, `node-pty`, `electron-builder`
 - **Webview/UI**: React 19, TypeScript, Vite, Canvas 2D
+- **Local storage**: SQLite, `better-sqlite3`
 - **Shared logic**: TypeScript, Claude transcript parsing, asset loading, persistence
 
 ## Known Limitations

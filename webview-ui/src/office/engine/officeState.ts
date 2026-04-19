@@ -15,6 +15,7 @@ import {
   IDLE_CHAT_DURATION_SEC,
   IDLE_CHAT_LINE_INTERVAL_SEC,
   IDLE_CHAT_MAX_DISTANCE_TILES,
+  IDLE_CHAT_TURN_PAUSE_SEC,
   INACTIVE_SEAT_TIMER_MIN_SEC,
   INACTIVE_SEAT_TIMER_RANGE_SEC,
   WAITING_BUBBLE_DURATION_SEC,
@@ -117,6 +118,7 @@ export class OfficeState {
   }
 
   private maybeStartIdleChats(dt: number): void {
+    const hasActiveChat = Array.from(this.characters.values()).some((ch) => ch.chatPartnerId !== null);
     const idleCandidates = Array.from(this.characters.values()).filter(
       (ch) =>
         !ch.isSubagent &&
@@ -130,6 +132,8 @@ export class OfficeState {
     for (const ch of idleCandidates) {
       ch.chatCooldown = Math.max(0, ch.chatCooldown - dt);
     }
+
+    if (hasActiveChat) return;
 
     const available = idleCandidates.filter((ch) => ch.chatCooldown <= 0);
     for (const ch of available) {
@@ -158,9 +162,17 @@ export class OfficeState {
       return;
     }
 
-    if (ch.currentTool !== null || ch.path.length > 0) {
+    if (ch.currentTool !== null || ch.bubbleType === 'permission' || ch.bubbleType === 'waiting' || ch.path.length > 0) {
+      const partnerId = ch.chatPartnerId;
       this.clearChat(ch);
       ch.chatCooldown = this.randomIdleChatCooldown();
+      if (partnerId !== null) {
+        const partner = this.characters.get(partnerId);
+        if (partner) {
+          this.clearChat(partner);
+          partner.chatCooldown = this.randomIdleChatCooldown();
+        }
+      }
       return;
     }
 
@@ -180,6 +192,15 @@ export class OfficeState {
 
     const speaker = ch.chatSpeaking ? ch : partner.chatSpeaking ? partner : ch;
     const listener = speaker.id === ch.id ? partner : ch;
+
+    if (speaker.bubbleType === null && speaker.bubbleText === null && speaker.chatLineTimer < 0) {
+      speaker.chatLineTimer += dt;
+      if (speaker.chatLineTimer >= 0) {
+        this.setChatSpeaker(speaker, listener);
+      }
+      return;
+    }
+
     speaker.chatLineTimer -= dt;
     listener.chatLineTimer = speaker.chatLineTimer;
     if (speaker.chatLineTimer <= 0) {
@@ -190,7 +211,14 @@ export class OfficeState {
         listener.chatLineTimer = IDLE_CHAT_LINE_INTERVAL_SEC;
       } else {
         listener.chatLineIndex = 0;
-        this.setChatSpeaker(listener, speaker);
+        speaker.chatSpeaking = false;
+        speaker.bubbleType = null;
+        speaker.bubbleText = null;
+        speaker.chatLineTimer = IDLE_CHAT_TURN_PAUSE_SEC;
+        listener.chatSpeaking = true;
+        listener.bubbleType = null;
+        listener.bubbleText = null;
+        listener.chatLineTimer = -IDLE_CHAT_TURN_PAUSE_SEC;
       }
     }
   }
