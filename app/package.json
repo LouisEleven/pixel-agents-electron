@@ -1,0 +1,42 @@
+{
+  "name": "pixel-agents-electron",
+  "version": "0.1.0",
+  "description": "Pixel art office for AI agents - standalone Electron app",
+  "main": "dist/main/index.js",
+  "bin": {
+    "pixel-agents": "./bin/pixel-agents.js"
+  },
+  "scripts": {
+    "dev": "npm run build && electron .",
+    "build": "npm --prefix ../webview-ui run build && tsc",
+    "build:bin": "node scripts/build-cli.js",
+    "build:main": "tsc -p tsconfig.json",
+    "build:preload": "tsc -p tsconfig.json",
+    "watch": "tsc --watch",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win"
+  },
+  "author": "pablodelucca",
+  "license": "MIT",
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.3",
+    "@types/node": "^20.10.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "electron": "^28.3.3",
+    "electron-builder": "^24.9.1",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "electron-log": "^5.0.0",
+    "node-pty": "^1.1.0",
+    "pngjs": "^7.0.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0"
+  }
+}

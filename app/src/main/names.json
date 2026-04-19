@@ -1,0 +1,10 @@
+{
+  "male": [
+    "Alex", "Blake", "Chris", "David", "Ethan", "Finn", "Grant", "Henry", "Isaac", "Jack",
+    "Kai", "Leo", "Max", "Noah", "Owen", "Paul", "Quinn", "Ryan", "Sam", "Tyler"
+  ],
+  "female": [
+    "Anna", "Bella", "Cleo", "Diana", "Emma", "Fiona", "Grace", "Hannah", "Ivy", "Jade",
+    "Kate", "Luna", "Mia", "Nora", "Olivia", "Paige", "Quinn", "Rose", "Sara", "Tara"
+  ]
+}
