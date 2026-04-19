@@ -91,7 +91,7 @@ export class AgentManager {
       folderName,
       palette: agent.palette,
       hueShift: agent.hueShift,
-      name: restoreUid ? agent.name : undefined,
+      name: agent.name,
     });
 
     try {

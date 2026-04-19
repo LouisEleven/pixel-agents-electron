@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import namesData from '../data/names.json';
-import { AGENT_HUE_PRESETS, PALETTE_COUNT } from '../constants.js';
+import { AGENT_HUE_PRESETS } from '../constants.js';
 import { useI18n } from '../i18n.tsx';
 import { getCachedSprite } from '../office/sprites/spriteCache.js';
 import { getCharacterSprites } from '../office/sprites/spriteData.js';
@@ -137,8 +137,8 @@ export function CreateAgentModal({
             {paletteOptions.map((option) => (
               <ItemSelect
                 key={option}
-                width={56}
-                height={72}
+                width={64}
+                height={88}
                 selected={palette === option}
                 onClick={() => setPalette(option)}
                 title={`${avatarLabel} ${option + 1}`}
@@ -147,8 +147,8 @@ export function CreateAgentModal({
                   ctx.imageSmoothingEnabled = false;
                   const sprite = getCharacterSprites(option, hueShift).walk[Direction.DOWN][1];
                   const cached = getCachedSprite(sprite, 3);
-                  const x = Math.floor((56 - cached.width) / 2);
-                  const y = Math.floor(72 - cached.height - 4);
+                  const x = Math.floor((64 - cached.width) / 2);
+                  const y = Math.floor(88 - cached.height - 2);
                   ctx.drawImage(cached, x, y);
                 }}
               />
