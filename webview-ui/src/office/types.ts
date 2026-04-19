@@ -163,9 +163,21 @@ export interface Character {
   /** Assigned seat uid, or null if no seat */
   seatId: string | null;
   /** Active speech bubble type, or null if none showing */
-  bubbleType: 'permission' | 'waiting' | null;
-  /** Countdown timer for bubble (waiting: 2→0, permission: unused) */
+  bubbleType: 'permission' | 'waiting' | 'chat' | null;
+  /** Bubble countdown timer (waiting/chat count down, permission unused) */
   bubbleTimer: number;
+  /** Text shown in a chat bubble */
+  bubbleText: string | null;
+  /** Current chat partner ID, or null if not chatting */
+  chatPartnerId: number | null;
+  /** Chat lines this character can cycle through in the current conversation */
+  chatLines: string[];
+  /** Current chat line index */
+  chatLineIndex: number;
+  /** Countdown until switching to the next chat line */
+  chatLineTimer: number;
+  /** Cooldown before this character can start another idle chat */
+  chatCooldown: number;
   /** Timer to stay seated while inactive after seat reassignment (counts down to 0) */
   seatTimer: number;
   /** Whether this character represents a sub-agent (spawned by Task tool) */

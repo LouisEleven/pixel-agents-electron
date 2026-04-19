@@ -8,6 +8,13 @@ import {
   FURNITURE_ANIM_INTERVAL_SEC,
   HUE_SHIFT_MIN_DEG,
   HUE_SHIFT_RANGE_DEG,
+  IDLE_CHAT_ATTEMPT_MAX_SEC,
+  IDLE_CHAT_ATTEMPT_MIN_SEC,
+  IDLE_CHAT_COOLDOWN_MAX_SEC,
+  IDLE_CHAT_COOLDOWN_MIN_SEC,
+  IDLE_CHAT_DURATION_SEC,
+  IDLE_CHAT_LINE_INTERVAL_SEC,
+  IDLE_CHAT_MAX_DISTANCE_TILES,
   INACTIVE_SEAT_TIMER_MIN_SEC,
   INACTIVE_SEAT_TIMER_RANGE_SEC,
   WAITING_BUBBLE_DURATION_SEC,
@@ -32,6 +39,7 @@ import type {
 } from '../types.js';
 import { CharacterState, Direction, MATRIX_EFFECT_DURATION, TILE_SIZE } from '../types.js';
 import { createCharacter, updateCharacter } from './characters.js';
+import { pickIdleChatPair } from './idleChatData.js';
 import { matrixEffectSeeds } from './matrixEffect.js';
 
 export class OfficeState {
@@ -42,6 +50,124 @@ export class OfficeState {
   furniture: FurnitureInstance[];
   walkableTiles: Array<{ col: number; row: number }>;
   characters: Map<number, Character> = new Map();
+
+  private randomIdleChatDelay(): number {
+    return IDLE_CHAT_ATTEMPT_MIN_SEC + Math.random() * (IDLE_CHAT_ATTEMPT_MAX_SEC - IDLE_CHAT_ATTEMPT_MIN_SEC);
+  }
+
+  private randomIdleChatCooldown(): number {
+    return (
+      IDLE_CHAT_COOLDOWN_MIN_SEC +
+      Math.random() * (IDLE_CHAT_COOLDOWN_MAX_SEC - IDLE_CHAT_COOLDOWN_MIN_SEC)
+    );
+  }
+
+  private clearChat(ch: Character): void {
+    ch.chatPartnerId = null;
+    ch.chatLines = [];
+    ch.chatLineIndex = 0;
+    ch.chatLineTimer = 0;
+    ch.bubbleText = null;
+    if (ch.bubbleType === 'chat') {
+      ch.bubbleType = null;
+      ch.bubbleTimer = 0;
+    }
+  }
+
+  private startIdleChat(a: Character, b: Character): void {
+    const [linesA, linesB] = pickIdleChatPair();
+    a.chatPartnerId = b.id;
+    b.chatPartnerId = a.id;
+    a.chatLines = linesA;
+    b.chatLines = linesB;
+    a.chatLineIndex = 0;
+    b.chatLineIndex = 0;
+    a.chatLineTimer = IDLE_CHAT_LINE_INTERVAL_SEC;
+    b.chatLineTimer = IDLE_CHAT_LINE_INTERVAL_SEC;
+    a.bubbleType = 'chat';
+    b.bubbleType = 'chat';
+    a.bubbleTimer = IDLE_CHAT_DURATION_SEC;
+    b.bubbleTimer = IDLE_CHAT_DURATION_SEC;
+    a.bubbleText = linesA[0] ?? null;
+    b.bubbleText = linesB[0] ?? null;
+    a.chatCooldown = this.randomIdleChatCooldown();
+    b.chatCooldown = this.randomIdleChatCooldown();
+
+    const dx = b.tileCol - a.tileCol;
+    const dy = b.tileRow - a.tileRow;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      a.dir = dx >= 0 ? Direction.RIGHT : Direction.LEFT;
+      b.dir = dx >= 0 ? Direction.LEFT : Direction.RIGHT;
+    } else {
+      a.dir = dy >= 0 ? Direction.DOWN : Direction.UP;
+      b.dir = dy >= 0 ? Direction.UP : Direction.DOWN;
+    }
+  }
+
+  private maybeStartIdleChats(dt: number): void {
+    const idleCandidates = Array.from(this.characters.values()).filter(
+      (ch) =>
+        !ch.isSubagent &&
+        !ch.isActive &&
+        ch.state === CharacterState.IDLE &&
+        ch.path.length === 0 &&
+        ch.matrixEffect === null &&
+        ch.chatPartnerId === null &&
+        ch.bubbleType !== 'permission' &&
+        ch.bubbleType !== 'waiting',
+    );
+
+    for (const ch of idleCandidates) {
+      ch.chatCooldown = Math.max(0, ch.chatCooldown - dt);
+    }
+
+    const available = idleCandidates.filter((ch) => ch.chatCooldown <= 0);
+    for (const ch of available) {
+      if (ch.chatPartnerId !== null) continue;
+      let partner: Character | null = null;
+      let closestDistance = Infinity;
+      for (const other of available) {
+        if (other.id === ch.id || other.chatPartnerId !== null) continue;
+        const distance = Math.abs(ch.tileCol - other.tileCol) + Math.abs(ch.tileRow - other.tileRow);
+        if (distance <= IDLE_CHAT_MAX_DISTANCE_TILES && distance < closestDistance) {
+          closestDistance = distance;
+          partner = other;
+        }
+      }
+      if (!partner) continue;
+      this.startIdleChat(ch, partner);
+    }
+  }
+
+  private updateIdleChat(ch: Character, dt: number): void {
+    if (ch.bubbleType !== 'chat') return;
+    const partner = ch.chatPartnerId !== null ? this.characters.get(ch.chatPartnerId) : null;
+    if (!partner || partner.bubbleType !== 'chat' || partner.chatPartnerId !== ch.id) {
+      this.clearChat(ch);
+      ch.chatCooldown = this.randomIdleChatCooldown();
+      return;
+    }
+
+    if (ch.isActive || ch.state !== CharacterState.IDLE || ch.path.length > 0) {
+      this.clearChat(ch);
+      ch.chatCooldown = this.randomIdleChatCooldown();
+      return;
+    }
+
+    ch.bubbleTimer -= dt;
+    if (ch.bubbleTimer <= 0) {
+      this.clearChat(ch);
+      ch.chatCooldown = this.randomIdleChatCooldown();
+      return;
+    }
+
+    ch.chatLineTimer -= dt;
+    if (ch.chatLineTimer <= 0 && ch.chatLines.length > 0) {
+      ch.chatLineIndex = (ch.chatLineIndex + 1) % ch.chatLines.length;
+      ch.bubbleText = ch.chatLines[ch.chatLineIndex] ?? null;
+      ch.chatLineTimer = IDLE_CHAT_LINE_INTERVAL_SEC;
+    }
+  }
   /** Accumulated time for furniture animation frame cycling */
   furnitureAnimTimer = 0;
   selectedAgentId: number | null = null;
@@ -326,6 +452,7 @@ export class OfficeState {
     const ch = this.characters.get(id);
     if (!ch) return;
     if (ch.matrixEffect === 'despawn') return; // already despawning
+    this.clearChat(ch);
     // Free seat and clear selection immediately
     if (ch.seatId) {
       const seat = this.seats.get(ch.seatId);
@@ -509,6 +636,7 @@ export class OfficeState {
       ch.matrixEffect = 'despawn';
       ch.matrixEffectTimer = 0;
       ch.matrixEffectSeeds = matrixEffectSeeds();
+      this.clearChat(ch);
       ch.bubbleType = null;
     }
     // Clean up tracking maps immediately so keys don't collide
@@ -540,6 +668,7 @@ export class OfficeState {
           ch.matrixEffect = 'despawn';
           ch.matrixEffectTimer = 0;
           ch.matrixEffectSeeds = matrixEffectSeeds();
+          this.clearChat(ch);
           ch.bubbleType = null;
         }
         this.subagentMeta.delete(id);
@@ -561,6 +690,9 @@ export class OfficeState {
   setAgentActive(id: number, active: boolean): void {
     const ch = this.characters.get(id);
     if (ch) {
+      if (active) {
+        this.clearChat(ch);
+      }
       ch.isActive = active;
       if (!active) {
         // Sentinel -1: signals turn just ended, skip next seat rest timer.
@@ -568,6 +700,7 @@ export class OfficeState {
         ch.seatTimer = -1;
         ch.path = [];
         ch.moveProgress = 0;
+        ch.chatCooldown = this.randomIdleChatDelay();
       }
       this.rebuildFurnitureInstances();
     }
