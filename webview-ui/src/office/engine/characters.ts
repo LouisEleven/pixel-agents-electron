@@ -1,7 +1,8 @@
 import {
   SEAT_REST_MAX_SEC,
   SEAT_REST_MIN_SEC,
-  STARTUP_WANDER_DELAY_SEC,
+  STARTUP_WANDER_DELAY_MIN_SEC,
+  STARTUP_WANDER_DELAY_RANGE_SEC,
   TYPE_FRAME_DURATION_SEC,
   WALK_FRAME_DURATION_SEC,
   WALK_SPEED_PX_PER_SEC,
@@ -86,7 +87,7 @@ export function createCharacter(
     chatLineTimer: 0,
     chatSpeaking: false,
     chatCooldown: 0,
-    seatTimer: STARTUP_WANDER_DELAY_SEC,
+    seatTimer: STARTUP_WANDER_DELAY_MIN_SEC + Math.random() * STARTUP_WANDER_DELAY_RANGE_SEC,
     manualWalkTarget: false,
     isSubagent: false,
     parentAgentId: null,

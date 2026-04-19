@@ -24,7 +24,8 @@ export const BUBBLE_VERTICAL_OFFSET_PX = 24;
 export const BUBBLE_FADE_DURATION_SEC = 0.5;
 
 // Seat
-export const STARTUP_WANDER_DELAY_SEC = 5;
+export const STARTUP_WANDER_DELAY_MIN_SEC = 3;
+export const STARTUP_WANDER_DELAY_RANGE_SEC = 7;
 export const INACTIVE_SEAT_TIMER_MIN_SEC = 3;
 export const INACTIVE_SEAT_TIMER_RANGE_SEC = 2;
 
