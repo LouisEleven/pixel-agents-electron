@@ -12,7 +12,6 @@ import {
   ZOOM_SCROLL_THRESHOLD,
 } from '../../constants.js';
 import { unlockAudio } from '../../notificationSound.js';
-import { vscode } from '../../vscodeApi.js';
 import { canPlaceFurniture, getWallPlacementRow } from '../editor/editorActions.js';
 import type { EditorState } from '../editor/editorState.js';
 import { startGameLoop } from '../engine/gameLoop.js';
@@ -741,38 +740,22 @@ export function OfficeCanvas({
         return;
       }
 
-      // No agent hit — check seat click while agent is selected
+      // No agent hit — seat clicks still work, plain floor clicks clear selection.
       if (officeState.selectedAgentId !== null) {
         const selectedCh = officeState.characters.get(officeState.selectedAgentId);
         const tile = screenToTile(e.clientX, e.clientY);
 
-        // Skip seat reassignment for sub-agents
         if (selectedCh && !selectedCh.isSubagent && tile) {
           const seatId = officeState.getSeatAtTile(tile.col, tile.row);
           if (seatId) {
             const seat = officeState.seats.get(seatId);
-            if (seat && selectedCh && seatId !== selectedCh.seatId && !seat.assigned) {
-              // Clicked available seat — reassign
+            if (seat && seatId !== selectedCh.seatId && !seat.assigned) {
               officeState.reassignSeat(officeState.selectedAgentId, seatId);
               officeState.selectedAgentId = null;
               officeState.cameraFollowId = null;
-              const seats: Record<
-                number,
-                { palette: number; hueShift: number; seatId: string | null }
-              > = {};
-              for (const ch of officeState.characters.values()) {
-                if (ch.isSubagent) continue;
-                seats[ch.id] = { palette: ch.palette, hueShift: ch.hueShift, seatId: ch.seatId };
-              }
-              vscode.postMessage({ type: 'saveAgentSeats', seats });
               return;
             }
           }
-        }
-
-        if (tile) {
-          officeState.walkToTile(officeState.selectedAgentId, tile.col, tile.row);
-          return;
         }
 
         officeState.selectedAgentId = null;
