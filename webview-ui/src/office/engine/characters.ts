@@ -83,6 +83,7 @@ export function createCharacter(
     chatLines: [],
     chatLineIndex: 0,
     chatLineTimer: 0,
+    chatSpeaking: false,
     chatCooldown: 0,
     seatTimer: 0,
     isSubagent: false,

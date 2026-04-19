@@ -176,6 +176,8 @@ export interface Character {
   chatLineIndex: number;
   /** Countdown until switching to the next chat line */
   chatLineTimer: number;
+  /** Whether this character is the active speaker in the current chat turn */
+  chatSpeaking: boolean;
   /** Cooldown before this character can start another idle chat */
   chatCooldown: number;
   /** Timer to stay seated while inactive after seat reassignment (counts down to 0) */

@@ -543,7 +543,7 @@ function renderBubbles(
       const bubbleHeight = lines.length * lineHeight + padding * 2;
       const bubbleX = Math.round(offsetX + ch.x * zoom - bubbleWidth / 2);
       const bubbleY = Math.round(
-        offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - bubbleHeight - tail - 2 * zoom,
+        offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - bubbleHeight - tail - 8 * zoom,
       );
 
       ctx.fillStyle = CHAT_BUBBLE_BG;

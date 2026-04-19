@@ -67,11 +67,23 @@ export class OfficeState {
     ch.chatLines = [];
     ch.chatLineIndex = 0;
     ch.chatLineTimer = 0;
+    ch.chatSpeaking = false;
     ch.bubbleText = null;
     if (ch.bubbleType === 'chat') {
       ch.bubbleType = null;
       ch.bubbleTimer = 0;
     }
+  }
+
+  private setChatSpeaker(speaker: Character, listener: Character): void {
+    speaker.chatSpeaking = true;
+    listener.chatSpeaking = false;
+    speaker.bubbleType = 'chat';
+    listener.bubbleType = null;
+    speaker.bubbleText = speaker.chatLines[speaker.chatLineIndex] ?? null;
+    listener.bubbleText = null;
+    speaker.chatLineTimer = IDLE_CHAT_LINE_INTERVAL_SEC;
+    listener.chatLineTimer = IDLE_CHAT_LINE_INTERVAL_SEC;
   }
 
   private startIdleChat(a: Character, b: Character): void {
@@ -82,14 +94,8 @@ export class OfficeState {
     b.chatLines = linesB;
     a.chatLineIndex = 0;
     b.chatLineIndex = 0;
-    a.chatLineTimer = IDLE_CHAT_LINE_INTERVAL_SEC;
-    b.chatLineTimer = IDLE_CHAT_LINE_INTERVAL_SEC;
-    a.bubbleType = 'chat';
-    b.bubbleType = 'chat';
     a.bubbleTimer = IDLE_CHAT_DURATION_SEC;
     b.bubbleTimer = IDLE_CHAT_DURATION_SEC;
-    a.bubbleText = linesA[0] ?? null;
-    b.bubbleText = linesB[0] ?? null;
     a.chatCooldown = this.randomIdleChatCooldown();
     b.chatCooldown = this.randomIdleChatCooldown();
 
@@ -102,14 +108,19 @@ export class OfficeState {
       a.dir = dy >= 0 ? Direction.DOWN : Direction.UP;
       b.dir = dy >= 0 ? Direction.UP : Direction.DOWN;
     }
+
+    if (Math.random() < 0.5) {
+      this.setChatSpeaker(a, b);
+    } else {
+      this.setChatSpeaker(b, a);
+    }
   }
 
   private maybeStartIdleChats(dt: number): void {
     const idleCandidates = Array.from(this.characters.values()).filter(
       (ch) =>
         !ch.isSubagent &&
-        !ch.isActive &&
-        (ch.state === CharacterState.IDLE || ch.state === CharacterState.WALK) &&
+        ch.currentTool === null &&
         ch.matrixEffect === null &&
         ch.chatPartnerId === null &&
         ch.bubbleType !== 'permission' &&
@@ -120,9 +131,7 @@ export class OfficeState {
       ch.chatCooldown = Math.max(0, ch.chatCooldown - dt);
     }
 
-    const available = idleCandidates.filter(
-      (ch) => ch.chatCooldown <= 0 && (ch.state === CharacterState.WALK || ch.wanderCount > 0),
-    );
+    const available = idleCandidates.filter((ch) => ch.chatCooldown <= 0);
     for (const ch of available) {
       if (ch.chatPartnerId !== null) continue;
       let partner: Character | null = null;
@@ -141,32 +150,48 @@ export class OfficeState {
   }
 
   private updateIdleChat(ch: Character, dt: number): void {
-    if (ch.bubbleType !== 'chat') return;
-    const partner = ch.chatPartnerId !== null ? this.characters.get(ch.chatPartnerId) : null;
-    if (!partner || partner.bubbleType !== 'chat' || partner.chatPartnerId !== ch.id) {
+    if (ch.chatPartnerId === null) return;
+    const partner = this.characters.get(ch.chatPartnerId);
+    if (!partner || partner.chatPartnerId !== ch.id) {
       this.clearChat(ch);
       ch.chatCooldown = this.randomIdleChatCooldown();
       return;
     }
 
-    if (ch.isActive || ch.state !== CharacterState.IDLE || ch.path.length > 0) {
+    if (ch.currentTool !== null || ch.path.length > 0) {
       this.clearChat(ch);
       ch.chatCooldown = this.randomIdleChatCooldown();
+      return;
+    }
+
+    if (ch.id > partner.id) {
       return;
     }
 
     ch.bubbleTimer -= dt;
+    partner.bubbleTimer = ch.bubbleTimer;
     if (ch.bubbleTimer <= 0) {
       this.clearChat(ch);
+      this.clearChat(partner);
       ch.chatCooldown = this.randomIdleChatCooldown();
+      partner.chatCooldown = this.randomIdleChatCooldown();
       return;
     }
 
-    ch.chatLineTimer -= dt;
-    if (ch.chatLineTimer <= 0 && ch.chatLines.length > 0) {
-      ch.chatLineIndex = (ch.chatLineIndex + 1) % ch.chatLines.length;
-      ch.bubbleText = ch.chatLines[ch.chatLineIndex] ?? null;
-      ch.chatLineTimer = IDLE_CHAT_LINE_INTERVAL_SEC;
+    const speaker = ch.chatSpeaking ? ch : partner.chatSpeaking ? partner : ch;
+    const listener = speaker.id === ch.id ? partner : ch;
+    speaker.chatLineTimer -= dt;
+    listener.chatLineTimer = speaker.chatLineTimer;
+    if (speaker.chatLineTimer <= 0) {
+      if (speaker.chatLineIndex < speaker.chatLines.length - 1) {
+        speaker.chatLineIndex += 1;
+        speaker.bubbleText = speaker.chatLines[speaker.chatLineIndex] ?? null;
+        speaker.chatLineTimer = IDLE_CHAT_LINE_INTERVAL_SEC;
+        listener.chatLineTimer = IDLE_CHAT_LINE_INTERVAL_SEC;
+      } else {
+        listener.chatLineIndex = 0;
+        this.setChatSpeaker(listener, speaker);
+      }
     }
   }
   /** Accumulated time for furniture animation frame cycling */
