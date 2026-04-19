@@ -43,21 +43,27 @@ export class AgentManager {
     sessionId: string,
     jsonlFile: string,
     projectDir: string,
-    workspaceDir?: string,
-    folderName?: string,
-    restoreUid?: string,
-    preferredPalette?: number,
-    preferredHueShift?: number,
-    preferredName?: string,
+    options?: {
+      workspaceDir?: string;
+      folderName?: string;
+      restoreUid?: string;
+      preferredPalette?: number;
+      preferredHueShift?: number;
+      preferredName?: string;
+      personaPrompt?: string;
+      rolePrompt?: string;
+    },
   ): number {
-    const existingRecord = restoreUid ? getAgentByUid(restoreUid) : getAgentBySessionId(sessionId);
+    const existingRecord = options?.restoreUid
+      ? getAgentByUid(options.restoreUid)
+      : getAgentBySessionId(sessionId);
     const agent: AgentState = {
       id,
       uid: existingRecord?.uid || randomUUID(),
       sessionId,
       isExternal: false,
       projectDir,
-      workspaceDir,
+      workspaceDir: options?.workspaceDir,
       jsonlFile,
       fileOffset: 0,
       lineBuffer: '',
@@ -74,10 +80,12 @@ export class AgentManager {
       linesProcessed: 0,
       seenUnknownRecordTypes: new Set(),
       hookDelivered: false,
-      folderName,
-      palette: existingRecord?.palette ?? preferredPalette ?? Math.floor(Math.random() * 8),
-      hueShift: existingRecord?.hueShift ?? preferredHueShift ?? 0,
-      name: existingRecord?.name ?? preferredName,
+      folderName: options?.folderName,
+      palette: existingRecord?.palette ?? options?.preferredPalette ?? Math.floor(Math.random() * 8),
+      hueShift: existingRecord?.hueShift ?? options?.preferredHueShift ?? 0,
+      name: existingRecord?.name ?? options?.preferredName,
+      personaPrompt: options?.personaPrompt,
+      rolePrompt: options?.rolePrompt,
       history: existingRecord?.memory ? JSON.parse(existingRecord.memory) : [],
     };
 
@@ -88,23 +96,27 @@ export class AgentManager {
     this.onEvent?.({
       type: 'agentCreated',
       id,
-      folderName,
+      folderName: options?.folderName,
       palette: agent.palette,
       hueShift: agent.hueShift,
       name: agent.name,
+      personaPrompt: agent.personaPrompt,
+      rolePrompt: agent.rolePrompt,
     });
 
     try {
-      if (existingRecord && restoreUid) {
+      if (existingRecord && options?.restoreUid) {
         replaceAgentSession(agent.uid, agent.sessionId);
         updateAgent(agent.uid, {
           projectDir: agent.projectDir,
-          workspaceDir,
+          workspaceDir: options?.workspaceDir,
           jsonlFile: agent.jsonlFile,
           folderName: agent.folderName,
           name: agent.name,
           palette: agent.palette,
           hueShift: agent.hueShift,
+          personaPrompt: agent.personaPrompt,
+          rolePrompt: agent.rolePrompt,
           memory: JSON.stringify(agent.history),
         });
       } else {
@@ -112,12 +124,14 @@ export class AgentManager {
           uid: agent.uid,
           sessionId: agent.sessionId,
           projectDir: agent.projectDir,
-          workspaceDir,
+          workspaceDir: options?.workspaceDir,
           jsonlFile: agent.jsonlFile,
           folderName: agent.folderName,
           name: agent.name,
           palette: agent.palette,
           hueShift: agent.hueShift,
+          personaPrompt: agent.personaPrompt,
+          rolePrompt: agent.rolePrompt,
           memory: JSON.stringify(agent.history),
         });
       }
@@ -201,6 +215,8 @@ export class AgentManager {
         palette: a.palette,
         hueShift: a.hueShift,
         name: a.name,
+        personaPrompt: a.personaPrompt,
+        rolePrompt: a.rolePrompt,
         history: a.memory ? JSON.parse(a.memory) : [],
       }));
     } catch (e) {

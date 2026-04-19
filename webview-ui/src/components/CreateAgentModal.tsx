@@ -94,8 +94,8 @@ export function CreateAgentModal({
   const personaLabel = locale === 'zh' ? '人设 / 性格' : 'Persona / Personality';
   const personaPlaceholder =
     locale === 'zh'
-      ? '比如：毒舌但可靠、喜欢吐槽、说话简短一点'
-      : 'Example: witty but reliable, playful, short replies';
+      ? '比如：毒舌但可靠、喜欢吐槽\n说话简短一点'
+      : 'Example: witty but reliable, playful\nshort replies';
   const roleLabel = locale === 'zh' ? '职业 / 分工' : 'Role / Job';
   const rolePlaceholder =
     locale === 'zh' ? '比如：产品经理、前端工程师、测试同学' : 'Example: PM, frontend engineer, QA';
@@ -239,6 +239,7 @@ export function CreateAgentModal({
               placeholder={rolePlaceholder}
               rows={2}
               className="bg-bg border-2 border-border text-text px-8 py-6 rounded-none outline-none resize-none"
+              style={{ minHeight: 80, lineHeight: '24px' }}
             />
           </div>
 
@@ -250,6 +251,7 @@ export function CreateAgentModal({
               placeholder={personaPlaceholder}
               rows={2}
               className="bg-bg border-2 border-border text-text px-8 py-6 rounded-none outline-none resize-none"
+              style={{ minHeight: 80, lineHeight: '24px' }}
             />
           </div>
         </div>

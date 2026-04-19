@@ -67,6 +67,8 @@ export interface WorkspaceFolder {
 interface ExtensionMessageState {
   agents: number[];
   agentNames: Record<number, string>;
+  agentPersonaPrompts: Record<number, string>;
+  agentRolePrompts: Record<number, string>;
   selectedAgent: number | null;
   agentTools: Record<number, ToolActivity[]>;
   agentStatuses: Record<number, string>;
@@ -104,6 +106,8 @@ export function useExtensionMessages(
 ): ExtensionMessageState {
   const [agents, setAgents] = useState<number[]>([]);
   const [agentNames, setAgentNames] = useState<Record<number, string>>({});
+  const [agentPersonaPrompts, setAgentPersonaPrompts] = useState<Record<number, string>>({});
+  const [agentRolePrompts, setAgentRolePrompts] = useState<Record<number, string>>({});
   const [selectedAgent, setSelectedAgent] = useState<number | null>(null);
   const [agentTools, setAgentTools] = useState<Record<number, ToolActivity[]>>({});
   const [agentStatuses, setAgentStatuses] = useState<Record<number, string>>({});
@@ -176,6 +180,8 @@ export function useExtensionMessages(
         const id = msg.id as number;
         const folderName = msg.folderName as string | undefined;
         const customName = msg.name as string | undefined;
+        const personaPrompt = (msg.personaPrompt as string | undefined) ?? '';
+        const rolePrompt = (msg.rolePrompt as string | undefined) ?? '';
         const palette =
           typeof msg.palette === 'number' ? (msg.palette as number) : Math.floor(Math.random() * 8);
         const hueShift = typeof msg.hueShift === 'number' ? (msg.hueShift as number) : 0;
@@ -186,6 +192,14 @@ export function useExtensionMessages(
           setAgentNames((prevNames) => ({
             ...prevNames,
             [id]: name,
+          }));
+          setAgentPersonaPrompts((prevPrompts) => ({
+            ...prevPrompts,
+            [id]: personaPrompt,
+          }));
+          setAgentRolePrompts((prevPrompts) => ({
+            ...prevPrompts,
+            [id]: rolePrompt,
           }));
           return newAgents;
         });
@@ -206,6 +220,18 @@ export function useExtensionMessages(
           return next;
         });
         setSelectedAgent((prev) => (prev === id ? null : prev));
+        setAgentPersonaPrompts((prev) => {
+          if (!(id in prev)) return prev;
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+        setAgentRolePrompts((prev) => {
+          if (!(id in prev)) return prev;
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
         setAgentTools((prev) => {
           if (!(id in prev)) return prev;
           const next = { ...prev };
@@ -250,6 +276,10 @@ export function useExtensionMessages(
         >;
         const folderNames = (msg.folderNames || {}) as Record<number, string>;
         const customNames = (msg.customNames || {}) as Record<number, string>;
+        const agentDetails = (msg.agentDetails || {}) as Record<
+          number,
+          { personaPrompt?: string; rolePrompt?: string }
+        >;
         for (const id of incoming) {
           const m = meta[id];
           const folderName = folderNames[id];
@@ -265,8 +295,11 @@ export function useExtensionMessages(
             });
           }
           const customName = customNames[id];
+          const details = agentDetails[id];
           const name = customName || generateRandomName(m?.palette ?? Math.floor(Math.random() * 8));
           setAgentNames((prev) => ({ ...prev, [id]: name }));
+          setAgentPersonaPrompts((prev) => ({ ...prev, [id]: details?.personaPrompt ?? '' }));
+          setAgentRolePrompts((prev) => ({ ...prev, [id]: details?.rolePrompt ?? '' }));
         }
         setAgents((prev) => {
           const ids = new Set(prev);
@@ -547,6 +580,8 @@ export function useExtensionMessages(
   return {
     agents,
     agentNames,
+    agentPersonaPrompts,
+    agentRolePrompts,
     selectedAgent,
     agentTools,
     agentStatuses,

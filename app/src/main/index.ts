@@ -204,6 +204,15 @@ function sendExistingAgents() {
     agents.filter((a) => a.folderName).map((a) => [a.id, a.folderName]),
   );
   const customNames = Object.fromEntries(agents.filter((a) => a.name).map((a) => [a.id, a.name]));
+  const agentDetails = Object.fromEntries(
+    agents.map((a) => [
+      a.id,
+      {
+        personaPrompt: a.personaPrompt,
+        rolePrompt: a.rolePrompt,
+      },
+    ]),
+  );
   const seatMap = getAgentSeats() as Record<
     string,
     { palette?: number; hueShift?: number; seatId?: string | null }
@@ -227,6 +236,7 @@ function sendExistingAgents() {
     folderNames,
     customNames,
     agentMeta,
+    agentDetails,
   });
   log.info(
     `[IPC] Sent existingAgents: ids=${JSON.stringify(agentIds)}, meta=${JSON.stringify(agentMeta)}`,
@@ -550,18 +560,16 @@ function forwardAgentEvents() {
 
   processManager.setCallbacks(
     (processInfo) => {
-      agentManager.createAgent(
-        processInfo.id,
-        processInfo.sessionId,
-        processInfo.jsonlFile,
-        processInfo.projectDir,
-        processInfo.workspaceDir,
-        processInfo.folderName,
-        processInfo.restoreUid,
-        processInfo.preferredPalette,
-        processInfo.preferredHueShift,
-        processInfo.agentName,
-      );
+      agentManager.createAgent(processInfo.id, processInfo.sessionId, processInfo.jsonlFile, processInfo.projectDir, {
+        workspaceDir: processInfo.workspaceDir,
+        folderName: processInfo.folderName,
+        restoreUid: processInfo.restoreUid,
+        preferredPalette: processInfo.preferredPalette,
+        preferredHueShift: processInfo.preferredHueShift,
+        preferredName: processInfo.agentName,
+        personaPrompt: processInfo.personaPrompt,
+        rolePrompt: processInfo.rolePrompt,
+      });
       const createdAgent = agentManager.getAgent(processInfo.id);
       if (createdAgent) {
         addRestoredAgentUid(createdAgent.uid);
@@ -632,7 +640,16 @@ app.whenReady().then(async () => {
     log.info(
       `[App] Restoring agent identity: uid=${agentData.uid}, name=${agentData.name}, cwd=${restoreCwd ?? '(default)'}`,
     );
-    processManager.launchClaudeCode(restoreCwd, undefined, agentData.uid, agentData.name);
+    processManager.launchClaudeCode(
+      restoreCwd,
+      undefined,
+      agentData.uid,
+      agentData.name,
+      agentData.palette,
+      agentData.hueShift,
+      agentData.personaPrompt,
+      agentData.rolePrompt,
+    );
   }
 
   // Create tray

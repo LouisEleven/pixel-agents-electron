@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { AgentInfoModal } from './components/AgentInfoModal.js';
 import { BottomToolbar } from './components/BottomToolbar.js';
 import { vscode } from './vscodeApi.js';
 import { DebugView } from './components/DebugView.js';
@@ -56,6 +57,8 @@ function App() {
   const {
     agents,
     agentNames,
+    agentPersonaPrompts,
+    agentRolePrompts,
     selectedAgent,
     agentTools,
     agentStatuses,
@@ -85,6 +88,7 @@ function App() {
   const [isDebugMode, setIsDebugMode] = useState(false);
   const [alwaysShowOverlay, setAlwaysShowOverlay] = useState(false);
   const [activeTab, setActiveTab] = useState<'office' | 'terminal'>('office');
+  const [inspectedAgentId, setInspectedAgentId] = useState<number | null>(null);
 
   const { sessions, activeSession, activeSessionId, setActiveSessionId } = useTerminalSessions(
     () => setActiveTab('terminal'),
@@ -136,12 +140,28 @@ function App() {
     const os = getOfficeState();
     const meta = os.subagentMeta.get(agentId);
     const focusId = meta ? meta.parentAgentId : agentId;
+    setInspectedAgentId(null);
     setActiveTab('terminal');
     setActiveSessionId(focusId);
     window.electronAPI?.focusAgent?.(focusId);
   }, []);
 
+  const handleInspectAgent = useCallback((agentId: number) => {
+    setInspectedAgentId(agentId);
+  }, []);
+
   const officeState = getOfficeState();
+  const inspectedCharacter =
+    inspectedAgentId !== null ? officeState.characters.get(inspectedAgentId) ?? null : null;
+  const inspectedAgentName = inspectedAgentId !== null ? agentNames[inspectedAgentId] || 'Agent' : 'Agent';
+  const inspectedRolePrompt =
+    inspectedAgentId !== null ? agentRolePrompts[inspectedAgentId] || '' : '';
+  const inspectedPersonaPrompt =
+    inspectedAgentId !== null ? agentPersonaPrompts[inspectedAgentId] || '' : '';
+  const inspectedGenderLabel =
+    inspectedCharacter && (inspectedCharacter.palette === 0 || inspectedCharacter.palette === 2 || inspectedCharacter.palette === 4)
+      ? '男'
+      : '女';
 
   // Force dependency on editorTickForKeyboard to propagate keyboard-triggered re-renders
   void editorTickForKeyboard;
@@ -210,6 +230,7 @@ function App() {
           <OfficeCanvas
             officeState={officeState}
             onClick={handleClick}
+            onInspectAgent={handleInspectAgent}
             isEditMode={editor.isEditMode}
             editorState={editorState}
             onEditorTileAction={editor.handleEditorTileAction}
@@ -399,6 +420,21 @@ function App() {
           setHooksEnabled(newVal);
           window.electronAPI?.setHooksEnabled?.(newVal);
         }}
+      />
+
+      <AgentInfoModal
+        isOpen={inspectedAgentId !== null}
+        onClose={() => setInspectedAgentId(null)}
+        onFire={() => {
+          if (inspectedAgentId !== null) {
+            setInspectedAgentId(null);
+            handleCloseAgent(inspectedAgentId);
+          }
+        }}
+        agentName={inspectedAgentName}
+        genderLabel={inspectedGenderLabel}
+        rolePrompt={inspectedRolePrompt}
+        personaPrompt={inspectedPersonaPrompt}
       />
 
       {showMigrationNotice && (

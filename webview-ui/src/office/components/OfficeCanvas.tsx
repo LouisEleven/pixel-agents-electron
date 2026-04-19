@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 
+import { AGENT_DOUBLE_CLICK_DELAY_MS } from '../../constants.js';
+
 import {
   CAMERA_CONTENT_BOUNDS_EMPTY_FALLBACK,
   CAMERA_DEFAULT_HORIZONTAL_OFFSET_FRACTION,
@@ -29,6 +31,7 @@ import { EditTool, TILE_SIZE, TileType } from '../types.js';
 interface OfficeCanvasProps {
   officeState: OfficeState;
   onClick: (agentId: number) => void;
+  onInspectAgent: (agentId: number) => void;
   isEditMode: boolean;
   editorState: EditorState;
   onEditorTileAction: (col: number, row: number) => void;
@@ -47,6 +50,7 @@ interface OfficeCanvasProps {
 export function OfficeCanvas({
   officeState,
   onClick,
+  onInspectAgent,
   isEditMode,
   editorState,
   onEditorTileAction,
@@ -74,6 +78,7 @@ export function OfficeCanvas({
   const isEraseDraggingRef = useRef(false);
   // Zoom scroll accumulator for trackpad pinch sensitivity
   const zoomAccumulatorRef = useRef(0);
+  const clickTimeoutRef = useRef<number | null>(null);
 
   // Clamp pan so the map edge can't go past a margin inside the viewport
   const clampPan = useCallback(
@@ -725,19 +730,22 @@ export function OfficeCanvas({
 
       const hitId = officeState.getCharacterAt(pos.worldX, pos.worldY);
       if (hitId !== null) {
-        if (e.detail >= 2) {
-          onClick(hitId);
-          return;
+        if (clickTimeoutRef.current !== null) {
+          window.clearTimeout(clickTimeoutRef.current);
+          clickTimeoutRef.current = null;
         }
-        // Dismiss any active bubble on click
-        officeState.dismissBubble(hitId);
-        // Toggle selection: click same agent deselects, different agent selects
-        if (officeState.selectedAgentId === hitId) {
-          officeState.selectedAgentId = null;
-        } else {
+        clickTimeoutRef.current = window.setTimeout(() => {
+          officeState.dismissBubble(hitId);
           officeState.selectedAgentId = hitId;
-        }
+          onInspectAgent(hitId);
+          clickTimeoutRef.current = null;
+        }, AGENT_DOUBLE_CLICK_DELAY_MS);
         return;
+      }
+
+      if (clickTimeoutRef.current !== null) {
+        window.clearTimeout(clickTimeoutRef.current);
+        clickTimeoutRef.current = null;
       }
 
       // No agent hit — seat clicks still work, plain floor clicks clear selection.
@@ -762,12 +770,16 @@ export function OfficeCanvas({
         officeState.cameraFollowId = null;
       }
     },
-    [officeState, onClick, screenToWorld, screenToTile, isEditMode],
+    [officeState, onInspectAgent, screenToWorld, screenToTile, isEditMode],
   );
 
   const handleMouseLeave = useCallback(() => {
     isPanningRef.current = false;
     isEraseDraggingRef.current = false;
+    if (clickTimeoutRef.current !== null) {
+      window.clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+    }
     editorState.isDragging = false;
     editorState.wallDragAdding = null;
     editorState.clearDrag();
@@ -828,6 +840,10 @@ export function OfficeCanvas({
   const handleDoubleClick = useCallback(
     (e: React.MouseEvent) => {
       if (isEditMode) return;
+      if (clickTimeoutRef.current !== null) {
+        window.clearTimeout(clickTimeoutRef.current);
+        clickTimeoutRef.current = null;
+      }
       const pos = screenToWorld(e.clientX, e.clientY);
       if (!pos) return;
 
@@ -836,7 +852,7 @@ export function OfficeCanvas({
         onClick(hitId);
       }
     },
-    [isEditMode, officeState, onClick],
+    [isEditMode, officeState, onClick, screenToWorld],
   );
 
   return (

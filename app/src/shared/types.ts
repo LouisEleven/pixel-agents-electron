@@ -26,6 +26,8 @@ export interface AgentState {
   palette?: number;
   hueShift?: number;
   name?: string;
+  personaPrompt?: string;
+  rolePrompt?: string;
   history: string[];
 }
 
@@ -47,6 +49,8 @@ export interface AgentCreatedEvent {
   palette?: number;
   hueShift?: number;
   name?: string;
+  personaPrompt?: string;
+  rolePrompt?: string;
 }
 
 export interface AgentClosedEvent {

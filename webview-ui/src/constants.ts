@@ -148,6 +148,7 @@ export const CHAT_BUBBLE_BG = '#f4ecd8';
 export const CHAT_BUBBLE_BORDER = '#3d3558';
 export const CHAT_BUBBLE_TEXT = '#2f2942';
 export const AGENT_THOUGHT_UPDATE_MIN_INTERVAL_MS = 1200;
+export const AGENT_DOUBLE_CLICK_DELAY_MS = 220;
 /** Default/fallback palette count (bundled characters). Actual count comes from getLoadedCharacterCount(). */
 export const PALETTE_COUNT = 8;
 export const AGENT_HUE_PRESETS = [0, 45, 90, 135, 180, 225, 270, 315] as const;

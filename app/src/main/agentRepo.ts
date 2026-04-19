@@ -12,6 +12,8 @@ export interface AgentRecord {
   name?: string;
   palette?: number;
   hueShift?: number;
+  personaPrompt?: string;
+  rolePrompt?: string;
   avatarConfig?: Record<string, unknown>;
   memory?: string;
   createdAt?: string;
@@ -21,8 +23,8 @@ export interface AgentRecord {
 export function createAgent(agent: AgentRecord): number {
   const db = getDb();
   const stmt = db.prepare(`
-    INSERT INTO agents (uid, session_id, project_dir, workspace_dir, jsonl_file, folder_name, name, palette, hue_shift, avatar_config, memory)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO agents (uid, session_id, project_dir, workspace_dir, jsonl_file, folder_name, name, palette, hue_shift, persona_prompt, role_prompt, avatar_config, memory)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const result = stmt.run(
@@ -35,6 +37,8 @@ export function createAgent(agent: AgentRecord): number {
     agent.name || null,
     agent.palette || 0,
     agent.hueShift || 0,
+    agent.personaPrompt || null,
+    agent.rolePrompt || null,
     agent.avatarConfig ? JSON.stringify(agent.avatarConfig) : null,
     agent.memory || null,
   );
@@ -79,6 +83,14 @@ export function updateAgent(uid: string, updates: Partial<AgentRecord>): void {
   if (updates.hueShift !== undefined) {
     fields.push('hue_shift = ?');
     values.push(updates.hueShift);
+  }
+  if (updates.personaPrompt !== undefined) {
+    fields.push('persona_prompt = ?');
+    values.push(updates.personaPrompt);
+  }
+  if (updates.rolePrompt !== undefined) {
+    fields.push('role_prompt = ?');
+    values.push(updates.rolePrompt);
   }
   if (updates.avatarConfig !== undefined) {
     fields.push('avatar_config = ?');
@@ -132,6 +144,8 @@ function mapAgentRow(row: Record<string, unknown> | undefined): AgentRecord | nu
     name: row.name as string | undefined,
     palette: row.palette as number | undefined,
     hueShift: row.hue_shift as number | undefined,
+    personaPrompt: row.persona_prompt as string | undefined,
+    rolePrompt: row.role_prompt as string | undefined,
     avatarConfig:
       typeof row.avatar_config === 'string'
         ? (JSON.parse(row.avatar_config as string) as Record<string, unknown>)
@@ -171,6 +185,8 @@ export function upsertAgentBySessionId(agent: AgentRecord): void {
       name: agent.name,
       palette: agent.palette,
       hueShift: agent.hueShift,
+      personaPrompt: agent.personaPrompt,
+      rolePrompt: agent.rolePrompt,
       avatarConfig: agent.avatarConfig,
       memory: agent.memory,
     });

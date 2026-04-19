@@ -51,6 +51,8 @@ export function ensureTables(): void {
       name TEXT,
       palette INTEGER DEFAULT 0,
       hue_shift INTEGER DEFAULT 0,
+      persona_prompt TEXT,
+      role_prompt TEXT,
       avatar_config TEXT,
       memory TEXT,
       created_at TEXT DEFAULT (datetime('now')),
@@ -74,6 +76,14 @@ export function ensureTables(): void {
   if (!columns.some((column) => column.name === 'workspace_dir')) {
     db.exec('ALTER TABLE agents ADD COLUMN workspace_dir TEXT');
     log.info('[Database] Added workspace_dir column');
+  }
+  if (!columns.some((column) => column.name === 'persona_prompt')) {
+    db.exec('ALTER TABLE agents ADD COLUMN persona_prompt TEXT');
+    log.info('[Database] Added persona_prompt column');
+  }
+  if (!columns.some((column) => column.name === 'role_prompt')) {
+    db.exec('ALTER TABLE agents ADD COLUMN role_prompt TEXT');
+    log.info('[Database] Added role_prompt column');
   }
 
   log.info('[Database] Tables ensured');
