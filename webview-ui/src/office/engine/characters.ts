@@ -86,6 +86,7 @@ export function createCharacter(
     chatSpeaking: false,
     chatCooldown: 0,
     seatTimer: 0,
+    manualWalkTarget: false,
     isSubagent: false,
     parentAgentId: null,
     matrixEffect: null,
@@ -242,6 +243,14 @@ export function updateCharacter(
             }
           }
         } else {
+          if (ch.manualWalkTarget) {
+            ch.manualWalkTarget = false;
+            ch.state = CharacterState.IDLE;
+            ch.wanderTimer = randomRange(WANDER_PAUSE_MIN_SEC, WANDER_PAUSE_MAX_SEC);
+            ch.frame = 0;
+            ch.frameTimer = 0;
+            break;
+          }
           // Check if arrived at assigned seat — sit down for a rest before wandering again
           if (ch.seatId) {
             const seat = seats.get(ch.seatId);

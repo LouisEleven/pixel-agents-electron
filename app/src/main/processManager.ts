@@ -16,6 +16,8 @@ export interface ProcessInfo {
   jsonlFile: string;
   folderName?: string;
   agentName?: string;
+  preferredPalette?: number;
+  preferredHueShift?: number;
   restoreUid?: string;
   output: string;
 }
@@ -165,7 +167,14 @@ export class ProcessManager {
     }
   }
 
-  launchClaudeCode(cwd?: string, sessionId?: string, restoreUid?: string, agentName?: string): number {
+  launchClaudeCode(
+    cwd?: string,
+    sessionId?: string,
+    restoreUid?: string,
+    agentName?: string,
+    preferredPalette?: number,
+    preferredHueShift?: number,
+  ): number {
     const id = this.nextId++;
     const useSessionId = sessionId || this.generateSessionId();
     const cwdToUse = cwd || os.homedir();
@@ -233,6 +242,8 @@ export class ProcessManager {
       jsonlFile: path.join(projectDir, `${useSessionId}.jsonl`),
       folderName,
       agentName,
+      preferredPalette,
+      preferredHueShift,
       restoreUid,
       output: '',
     };

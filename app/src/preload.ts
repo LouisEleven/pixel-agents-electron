@@ -19,7 +19,13 @@ export interface PtySessionInfo {
 }
 
 export interface ElectronAPI {
-  launchAgent: (options?: { cwd?: string; bypassPermissions?: boolean }) => Promise<number>;
+  launchAgent: (options?: {
+    cwd?: string;
+    bypassPermissions?: boolean;
+    name?: string;
+    palette?: number;
+    hueShift?: number;
+  }) => Promise<number>;
   killAgent: (agentId: number) => Promise<boolean>;
   sendToAgent: (agentId: number, text: string) => Promise<boolean>;
   getAgents: () => Promise<AgentInfo[]>;

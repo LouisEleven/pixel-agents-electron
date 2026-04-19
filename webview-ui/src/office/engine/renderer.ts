@@ -517,7 +517,6 @@ function renderBubbles(
   offsetX: number,
   offsetY: number,
   zoom: number,
-  hasLabelOverlay: boolean,
 ): void {
   for (const ch of characters) {
     if (!ch.bubbleType) continue;
@@ -544,7 +543,7 @@ function renderBubbles(
       const bubbleWidth = textWidth + padding * 2;
       const bubbleHeight = lines.length * lineHeight + padding * 2;
       const bubbleX = Math.round(offsetX + ch.x * zoom - bubbleWidth / 2);
-      const extraLabelOffset = hasLabelOverlay ? CHAT_BUBBLE_LABEL_CLEARANCE_PX * zoom : 0;
+      const extraLabelOffset = CHAT_BUBBLE_LABEL_CLEARANCE_PX * zoom;
       const bubbleY = Math.round(
         offsetY +
           (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom -
@@ -648,7 +647,7 @@ export function renderFrame(
   tileColors?: Array<ColorValue | null>,
   layoutCols?: number,
   layoutRows?: number,
-  hasLabelOverlay = false,
+  _hasLabelOverlay = false,
 ): { offsetX: number; offsetY: number } {
   // Clear
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -690,7 +689,7 @@ export function renderFrame(
   renderScene(ctx, allFurniture, characters, offsetX, offsetY, zoom, selectedId, hoveredId);
 
   // Speech bubbles (always on top of characters)
-  renderBubbles(ctx, characters, offsetX, offsetY, zoom, hasLabelOverlay);
+  renderBubbles(ctx, characters, offsetX, offsetY, zoom);
 
   // Editor overlays
   if (editor) {

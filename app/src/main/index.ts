@@ -275,12 +275,30 @@ function setupIpc() {
   });
 
   // Claude Code process
-  ipcMain.handle('launchAgent', (_event, options?: { cwd?: string }) => {
-    try {
-      log.info(`[IPC] launchAgent: cwd=${options?.cwd}`);
-      const agentId = processManager.launchClaudeCode(options?.cwd);
-      return agentId;
-    } catch (error) {
+  ipcMain.handle(
+    'launchAgent',
+    (
+      _event,
+      options?: {
+        cwd?: string;
+        bypassPermissions?: boolean;
+        name?: string;
+        palette?: number;
+        hueShift?: number;
+      },
+    ) => {
+      try {
+        log.info(`[IPC] launchAgent: cwd=${options?.cwd}, name=${options?.name ?? ''}`);
+        const agentId = processManager.launchClaudeCode(
+          options?.cwd,
+          undefined,
+          undefined,
+          options?.name,
+          options?.palette,
+          options?.hueShift,
+        );
+        return agentId;
+      } catch (error) {
       log.error(`[IPC] launchAgent error: ${error}`);
       throw error;
     }
@@ -536,6 +554,9 @@ function forwardAgentEvents() {
         processInfo.workspaceDir,
         processInfo.folderName,
         processInfo.restoreUid,
+        processInfo.preferredPalette,
+        processInfo.preferredHueShift,
+        processInfo.agentName,
       );
       const createdAgent = agentManager.getAgent(processInfo.id);
       if (createdAgent) {

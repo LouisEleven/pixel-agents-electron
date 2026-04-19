@@ -5,7 +5,13 @@ type VsCodeBridge = { postMessage(msg: unknown): void };
 
 type ElectronBridge = {
   postWebviewMessage?: (msg: unknown) => void;
-  launchAgent?: (options?: { cwd?: string; bypassPermissions?: boolean }) => Promise<number>;
+  launchAgent?: (options?: {
+    cwd?: string;
+    bypassPermissions?: boolean;
+    name?: string;
+    palette?: number;
+    hueShift?: number;
+  }) => Promise<number>;
   setAgentName?: (id: number, name: string) => void;
   closeAgent?: (id: number) => void;
 };

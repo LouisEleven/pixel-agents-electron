@@ -46,6 +46,9 @@ export class AgentManager {
     workspaceDir?: string,
     folderName?: string,
     restoreUid?: string,
+    preferredPalette?: number,
+    preferredHueShift?: number,
+    preferredName?: string,
   ): number {
     const existingRecord = restoreUid ? getAgentByUid(restoreUid) : getAgentBySessionId(sessionId);
     const agent: AgentState = {
@@ -72,9 +75,9 @@ export class AgentManager {
       seenUnknownRecordTypes: new Set(),
       hookDelivered: false,
       folderName,
-      palette: existingRecord?.palette ?? Math.floor(Math.random() * 6),
-      hueShift: existingRecord?.hueShift ?? 0,
-      name: existingRecord?.name,
+      palette: existingRecord?.palette ?? preferredPalette ?? Math.floor(Math.random() * 6),
+      hueShift: existingRecord?.hueShift ?? preferredHueShift ?? 0,
+      name: existingRecord?.name ?? preferredName,
       history: existingRecord?.memory ? JSON.parse(existingRecord.memory) : [],
     };
 

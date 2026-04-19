@@ -22,7 +22,7 @@ export type TranslationKey =
   | 'tabs.office'
   | 'tabs.terminal'
   | 'toolbar.newAgent'
-  | 'toolbar.skipPermissions'
+  | 'toolbar.customCreate'
   | 'toolbar.layout'
   | 'toolbar.layoutTitle'
   | 'toolbar.settings'
@@ -100,7 +100,7 @@ export const translations: Record<Locale, Record<TranslationKey, string>> = {
     'tabs.office': 'Office',
     'tabs.terminal': 'Terminal',
     'toolbar.newAgent': '+ Agent',
-    'toolbar.skipPermissions': 'Skip permissions mode',
+    'toolbar.customCreate': 'Custom Create',
     'toolbar.layout': 'Layout',
     'toolbar.layoutTitle': 'Edit office layout',
     'toolbar.settings': 'Settings',
@@ -177,7 +177,7 @@ export const translations: Record<Locale, Record<TranslationKey, string>> = {
     'tabs.office': '办公室',
     'tabs.terminal': '人物',
     'toolbar.newAgent': '+ Agent',
-    'toolbar.skipPermissions': '跳过权限模式',
+    'toolbar.customCreate': '自定义创建',
     'toolbar.layout': '布局',
     'toolbar.layoutTitle': '编辑办公室布局',
     'toolbar.settings': '设置',

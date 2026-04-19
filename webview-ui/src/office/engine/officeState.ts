@@ -150,6 +150,7 @@ export class OfficeState {
       }
       if (!partner) continue;
       this.startIdleChat(ch, partner);
+      break;
     }
   }
 
@@ -554,6 +555,7 @@ export class OfficeState {
       ch.state = CharacterState.WALK;
       ch.frame = 0;
       ch.frameTimer = 0;
+      ch.manualWalkTarget = false;
     } else {
       // Already at seat or no path — sit down
       ch.state = CharacterState.TYPE;
@@ -581,6 +583,7 @@ export class OfficeState {
       ch.state = CharacterState.WALK;
       ch.frame = 0;
       ch.frameTimer = 0;
+      ch.manualWalkTarget = false;
     } else {
       // Already at seat — sit down
       ch.state = CharacterState.TYPE;
@@ -611,6 +614,7 @@ export class OfficeState {
     ch.state = CharacterState.WALK;
     ch.frame = 0;
     ch.frameTimer = 0;
+    ch.manualWalkTarget = true;
     return true;
   }
 
