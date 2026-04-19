@@ -12,6 +12,7 @@ interface ToolOverlayProps {
   agents: number[];
   agentNames: Record<number, string>;
   agentTools: Record<number, ToolActivity[]>;
+  agentThoughts: Record<number, string>;
   subagentCharacters: SubagentCharacter[];
   containerRef: React.RefObject<HTMLDivElement | null>;
   zoom: number;
@@ -25,6 +26,7 @@ function getActivityText(
   agentId: number,
   agentNames: Record<number, string>,
   agentTools: Record<number, ToolActivity[]>,
+  agentThoughts: Record<number, string>,
   isActive: boolean,
 ): string {
   const tools = agentTools[agentId];
@@ -40,6 +42,9 @@ function getActivityText(
     }
   }
 
+  const thought = agentThoughts[agentId]?.trim();
+  if (thought) return thought;
+
   return agentNames[agentId] || 'Agent';
 }
 
@@ -48,6 +53,7 @@ export function ToolOverlay({
   agents,
   agentNames,
   agentTools,
+  agentThoughts,
   subagentCharacters,
   containerRef,
   zoom,
@@ -80,6 +86,10 @@ export function ToolOverlay({
 
   const selectedId = officeState.selectedAgentId;
   const hoveredId = officeState.hoveredAgentId;
+  const visibleThoughtSpeakerId = agents.find((id) => {
+    const thought = agentThoughts[id]?.trim();
+    return Boolean(thought);
+  }) ?? null;
 
   // All character IDs
   const allIds = [...agents, ...subagentCharacters.map((s) => s.id)];
@@ -114,7 +124,16 @@ export function ToolOverlay({
             activityText = sub ? sub.label : 'Subtask';
           }
         } else {
-          activityText = getActivityText(id, agentNames, agentTools, ch.isActive);
+          activityText = getActivityText(id, agentNames, agentTools, agentThoughts, ch.isActive);
+        }
+        const hasThought = !isSub && Boolean(agentThoughts[id]?.trim());
+        const shouldShowThought = hasThought && visibleThoughtSpeakerId === id;
+        const shouldShowLabel = !hasThought || shouldShowThought;
+
+        // Determine dot color
+
+        if (!shouldShowLabel && !alwaysShowOverlay && !isSelected && !isHovered) {
+          return null;
         }
 
         // Determine dot color

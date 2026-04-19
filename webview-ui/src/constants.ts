@@ -130,7 +130,7 @@ export const MAX_DELTA_TIME_SEC = 0.1;
 export const WAITING_BUBBLE_DURATION_SEC = 2.0;
 export const DISMISS_BUBBLE_FAST_FADE_SEC = 0.3;
 export const INACTIVE_SEAT_TIMER_MIN_SEC = 3.0;
-export const INACTIVE_SEAT_TIMER_RANGE_SEC = 2.0;
+export const INACTIVE_SEAT_TIMER_RANGE_SEC = 57.0;
 export const IDLE_CHAT_ATTEMPT_MIN_SEC = 0.5;
 export const IDLE_CHAT_ATTEMPT_MAX_SEC = 1.5;
 export const IDLE_CHAT_DURATION_SEC = 14.0;
@@ -147,6 +147,7 @@ export const CHAT_BUBBLE_LABEL_CLEARANCE_PX = 0;
 export const CHAT_BUBBLE_BG = '#f4ecd8';
 export const CHAT_BUBBLE_BORDER = '#3d3558';
 export const CHAT_BUBBLE_TEXT = '#2f2942';
+export const AGENT_THOUGHT_UPDATE_MIN_INTERVAL_MS = 1200;
 /** Default/fallback palette count (bundled characters). Actual count comes from getLoadedCharacterCount(). */
 export const PALETTE_COUNT = 8;
 export const AGENT_HUE_PRESETS = [0, 45, 90, 135, 180, 225, 270, 315] as const;

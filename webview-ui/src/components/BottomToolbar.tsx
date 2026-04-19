@@ -51,6 +51,8 @@ export function BottomToolbar({
         name: config?.name,
         palette: config?.palette,
         hueShift: config?.hueShift,
+        personaPrompt: config?.personaPrompt,
+        rolePrompt: config?.rolePrompt,
       });
       if (agentId && window.electronAPI?.spawnTerminal) {
         await window.electronAPI.spawnTerminal({ cwd: config?.cwd });
@@ -97,6 +99,8 @@ export function BottomToolbar({
       name: folder.name,
       palette: 1,
       hueShift: 0,
+      personaPrompt: '',
+      rolePrompt: '',
     });
   };
 

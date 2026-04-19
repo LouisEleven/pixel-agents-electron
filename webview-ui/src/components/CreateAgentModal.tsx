@@ -16,6 +16,8 @@ export interface CreateAgentConfig {
   name: string;
   palette: number;
   hueShift: number;
+  personaPrompt: string;
+  rolePrompt: string;
 }
 
 interface CreateAgentModalProps {
@@ -49,6 +51,8 @@ export function CreateAgentModal({
   const [palette, setPalette] = useState(1);
   const [hueShift, setHueShift] = useState(0);
   const [name, setName] = useState('');
+  const [personaPrompt, setPersonaPrompt] = useState('');
+  const [rolePrompt, setRolePrompt] = useState('');
   const [selectedFolderPath, setSelectedFolderPath] = useState('');
 
   const loadedPaletteCount = getLoadedCharacterCount();
@@ -64,6 +68,8 @@ export function CreateAgentModal({
     setPalette(defaultPalette);
     setHueShift(0);
     setName(suggestedNames[0] ?? '');
+    setPersonaPrompt('');
+    setRolePrompt('');
     setSelectedFolderPath(workspaceFolders[0]?.path ?? '');
   }, [isOpen, paletteOptions, suggestedNames, workspaceFolders]);
 
@@ -85,6 +91,14 @@ export function CreateAgentModal({
   const createLabel = locale === 'zh' ? '创建人物' : 'Create Agent';
   const cancelLabel = locale === 'zh' ? '取消' : 'Cancel';
   const customPlaceholder = locale === 'zh' ? '自己输入名字' : 'Enter custom name';
+  const personaLabel = locale === 'zh' ? '人设 / 性格' : 'Persona / Personality';
+  const personaPlaceholder =
+    locale === 'zh'
+      ? '比如：毒舌但可靠、喜欢吐槽、说话简短一点'
+      : 'Example: witty but reliable, playful, short replies';
+  const roleLabel = locale === 'zh' ? '职业 / 分工' : 'Role / Job';
+  const rolePlaceholder =
+    locale === 'zh' ? '比如：产品经理、前端工程师、测试同学' : 'Example: PM, frontend engineer, QA';
 
   const submitDisabled = name.trim().length === 0;
 
@@ -95,6 +109,8 @@ export function CreateAgentModal({
       name: name.trim(),
       palette,
       hueShift,
+      personaPrompt: personaPrompt.trim(),
+      rolePrompt: rolePrompt.trim(),
     });
     onClose();
   };
@@ -211,6 +227,30 @@ export function CreateAgentModal({
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-8">
+          <div className="flex flex-col gap-6 min-w-0">
+            <label className="text-sm text-text-muted">{roleLabel}</label>
+            <textarea
+              value={rolePrompt}
+              onChange={(event) => setRolePrompt(event.target.value)}
+              placeholder={rolePlaceholder}
+              rows={2}
+              className="bg-bg border-2 border-border text-text px-8 py-6 rounded-none outline-none resize-none"
+            />
+          </div>
+
+          <div className="flex flex-col gap-6 min-w-0">
+            <label className="text-sm text-text-muted">{personaLabel}</label>
+            <textarea
+              value={personaPrompt}
+              onChange={(event) => setPersonaPrompt(event.target.value)}
+              placeholder={personaPlaceholder}
+              rows={2}
+              className="bg-bg border-2 border-border text-text px-8 py-6 rounded-none outline-none resize-none"
+            />
           </div>
         </div>
 

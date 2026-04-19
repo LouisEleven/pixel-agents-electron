@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import namesData from '../data/names.json';
+import { AGENT_THOUGHT_UPDATE_MIN_INTERVAL_MS } from '../constants.js';
 import { playDoneSound, playPermissionSound, setSoundEnabled } from '../notificationSound.js';
 import type { OfficeState } from '../office/engine/officeState.js';
 import { setFloorSprites } from '../office/floorTiles.js';
@@ -69,6 +70,7 @@ interface ExtensionMessageState {
   selectedAgent: number | null;
   agentTools: Record<number, ToolActivity[]>;
   agentStatuses: Record<number, string>;
+  agentThoughts: Record<number, string>;
   subagentTools: Record<number, Record<string, ToolActivity[]>>;
   subagentCharacters: SubagentCharacter[];
   layoutReady: boolean;
@@ -105,6 +107,7 @@ export function useExtensionMessages(
   const [selectedAgent, setSelectedAgent] = useState<number | null>(null);
   const [agentTools, setAgentTools] = useState<Record<number, ToolActivity[]>>({});
   const [agentStatuses, setAgentStatuses] = useState<Record<number, string>>({});
+  const [agentThoughts, setAgentThoughts] = useState<Record<number, string>>({});
   const [subagentTools, setSubagentTools] = useState<
     Record<number, Record<string, ToolActivity[]>>
   >({});
@@ -125,6 +128,7 @@ export function useExtensionMessages(
 
   // Track whether initial layout has been loaded (ref to avoid re-render)
   const layoutReadyRef = useRef(false);
+  const thoughtUpdateRef = useRef<Record<number, { text: string; updatedAt: number }>>({});
 
   useEffect(() => {
     // Buffer agents from existingAgents until layout is loaded
@@ -223,6 +227,13 @@ export function useExtensionMessages(
         // Remove all sub-agent characters belonging to this agent
         os.removeAllSubagents(id);
         setSubagentCharacters((prev) => prev.filter((s) => s.parentAgentId !== id));
+        setAgentThoughts((prev) => {
+          if (!(id in prev)) return prev;
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+        delete thoughtUpdateRef.current[id];
         os.removeAgent(id);
       } else if (msg.type === 'agentNameChanged') {
         const id = msg.id as number;
@@ -270,6 +281,24 @@ export function useExtensionMessages(
         if (layoutReadyRef.current && incoming.length > 0) {
           saveAgentSeats(os);
         }
+      } else if (msg.type === 'agentThought') {
+        const id = msg.id as number;
+        const text = (msg.text as string).trim();
+        if (!text) return;
+        const now = Date.now();
+        const prevThought = thoughtUpdateRef.current[id];
+        if (
+          prevThought &&
+          prevThought.text !== text &&
+          now - prevThought.updatedAt < AGENT_THOUGHT_UPDATE_MIN_INTERVAL_MS
+        ) {
+          return;
+        }
+        thoughtUpdateRef.current[id] = { text, updatedAt: now };
+        setAgentThoughts((prev) => {
+          if (prev[id] === text) return prev;
+          return { ...prev, [id]: text };
+        });
       } else if (msg.type === 'agentToolStart') {
         const id = msg.id as number;
         const toolId = msg.toolId as string;
@@ -521,6 +550,7 @@ export function useExtensionMessages(
     selectedAgent,
     agentTools,
     agentStatuses,
+    agentThoughts,
     subagentTools,
     subagentCharacters,
     layoutReady,

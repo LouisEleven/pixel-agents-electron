@@ -84,7 +84,21 @@ export function processTranscriptLine(
         id?: string;
         name?: string;
         input?: Record<string, unknown>;
+        text?: string;
       }>;
+      const thoughtText = blocks
+        .filter((b) => b.type === 'text' && typeof b.text === 'string')
+        .map((b) => (b.text || '').trim())
+        .filter((text) => text.length > 0)
+        .join(' ')
+        .trim();
+      if (thoughtText) {
+        webview?.postMessage({
+          type: 'agentThought',
+          id: agentId,
+          text: thoughtText,
+        });
+      }
       const hasToolUse = blocks.some((b) => b.type === 'tool_use');
 
       if (hasToolUse) {

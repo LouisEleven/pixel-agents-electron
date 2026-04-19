@@ -25,6 +25,8 @@ export interface ElectronAPI {
     name?: string;
     palette?: number;
     hueShift?: number;
+    personaPrompt?: string;
+    rolePrompt?: string;
   }) => Promise<number>;
   killAgent: (agentId: number) => Promise<boolean>;
   sendToAgent: (agentId: number, text: string) => Promise<boolean>;

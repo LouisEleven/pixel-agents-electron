@@ -59,6 +59,7 @@ function App() {
     selectedAgent,
     agentTools,
     agentStatuses,
+    agentThoughts,
     subagentTools,
     subagentCharacters,
     layoutReady,
@@ -292,6 +293,7 @@ function App() {
               agents={agents}
               agentNames={agentNames}
               agentTools={agentTools}
+              agentThoughts={agentThoughts}
               subagentCharacters={subagentCharacters}
               containerRef={containerRef}
               zoom={editor.zoom}

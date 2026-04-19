@@ -285,6 +285,8 @@ function setupIpc() {
         name?: string;
         palette?: number;
         hueShift?: number;
+        personaPrompt?: string;
+        rolePrompt?: string;
       },
     ) => {
       try {
@@ -296,6 +298,8 @@ function setupIpc() {
           options?.name,
           options?.palette,
           options?.hueShift,
+          options?.personaPrompt,
+          options?.rolePrompt,
         );
         return agentId;
       } catch (error) {

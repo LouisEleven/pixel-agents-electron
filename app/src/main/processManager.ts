@@ -16,6 +16,8 @@ export interface ProcessInfo {
   jsonlFile: string;
   folderName?: string;
   agentName?: string;
+  personaPrompt?: string;
+  rolePrompt?: string;
   preferredPalette?: number;
   preferredHueShift?: number;
   restoreUid?: string;
@@ -174,6 +176,8 @@ export class ProcessManager {
     agentName?: string,
     preferredPalette?: number,
     preferredHueShift?: number,
+    personaPrompt?: string,
+    rolePrompt?: string,
   ): number {
     const id = this.nextId++;
     const useSessionId = sessionId || this.generateSessionId();
@@ -191,11 +195,20 @@ export class ProcessManager {
 
     const claudeArgs = ['--session-id', useSessionId, '--dangerously-skip-permissions'];
 
+    const systemPromptParts: string[] = [];
     if (preferredName) {
-      claudeArgs.push(
-        '--append-system-prompt',
+      systemPromptParts.push(
         `You are Claude Code Agent '${preferredName}'. Remember your name is ${preferredName}.`,
       );
+    }
+    if (rolePrompt) {
+      systemPromptParts.push(`Your role in the office is: ${rolePrompt}.`);
+    }
+    if (personaPrompt) {
+      systemPromptParts.push(`Stay in character with this persona: ${personaPrompt}.`);
+    }
+    if (systemPromptParts.length > 0) {
+      claudeArgs.push('--append-system-prompt', systemPromptParts.join(' '));
     }
 
     const claudeCmd = ['claude', ...claudeArgs].map(quoteShellArg).join(' ');
@@ -244,6 +257,8 @@ export class ProcessManager {
       agentName,
       preferredPalette,
       preferredHueShift,
+      personaPrompt,
+      rolePrompt,
       restoreUid,
       output: '',
     };
