@@ -11,6 +11,13 @@ import {
   BUTTON_RADIUS_ZOOM_FACTOR,
   CHARACTER_SITTING_OFFSET_PX,
   CHARACTER_Z_SORT_OFFSET,
+  CHAT_BUBBLE_BG,
+  CHAT_BUBBLE_BORDER,
+  CHAT_BUBBLE_LINE_HEIGHT_PX,
+  CHAT_BUBBLE_MAX_WIDTH_PX,
+  CHAT_BUBBLE_PADDING_PX,
+  CHAT_BUBBLE_TAIL_SIZE_PX,
+  CHAT_BUBBLE_TEXT,
   DELETE_BUTTON_BG,
   FALLBACK_FLOOR_COLOR,
   GHOST_BORDER_HOVER_FILL,
@@ -486,6 +493,23 @@ function renderRotateButton(
 
 // ── Speech bubbles ──────────────────────────────────────────────
 
+function wrapChatText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const chars = Array.from(text);
+  const lines: string[] = [];
+  let current = '';
+  for (const char of chars) {
+    const next = current + char;
+    if (current && ctx.measureText(next).width > maxWidth) {
+      lines.push(current);
+      current = char;
+    } else {
+      current = next;
+    }
+  }
+  if (current) lines.push(current);
+  return lines.length > 0 ? lines : [''];
+}
+
 function renderBubbles(
   ctx: CanvasRenderingContext2D,
   characters: Character[],
@@ -496,27 +520,61 @@ function renderBubbles(
   for (const ch of characters) {
     if (!ch.bubbleType) continue;
 
-    const sprite =
-      ch.bubbleType === 'permission' ? BUBBLE_PERMISSION_SPRITE : BUBBLE_WAITING_SPRITE;
-
-    // Compute opacity: permission = full, waiting = fade in last 0.5s
     let alpha = 1.0;
     if (ch.bubbleType === 'waiting' && ch.bubbleTimer < BUBBLE_FADE_DURATION_SEC) {
       alpha = ch.bubbleTimer / BUBBLE_FADE_DURATION_SEC;
     }
 
-    const cached = getCachedSprite(sprite, zoom);
-    // Position: centered above the character's head
-    // Character is anchored bottom-center at (ch.x, ch.y), sprite is 16x24
-    // Place bubble above head with a small gap; follow sitting offset
     const sittingOff = ch.state === CharacterState.TYPE ? BUBBLE_SITTING_OFFSET_PX : 0;
+
+    ctx.save();
+    if (alpha < 1.0) ctx.globalAlpha = alpha;
+
+    if (ch.bubbleType === 'chat' && ch.bubbleText) {
+      ctx.font = `${Math.max(8, Math.round(7 * zoom))}px monospace`;
+      ctx.textBaseline = 'top';
+      const maxTextWidth = CHAT_BUBBLE_MAX_WIDTH_PX * zoom - CHAT_BUBBLE_PADDING_PX * 2 * zoom;
+      const lines = wrapChatText(ctx, ch.bubbleText, maxTextWidth);
+      const lineHeight = CHAT_BUBBLE_LINE_HEIGHT_PX * zoom;
+      const padding = CHAT_BUBBLE_PADDING_PX * zoom;
+      const tail = CHAT_BUBBLE_TAIL_SIZE_PX * zoom;
+      const textWidth = Math.max(...lines.map((line) => ctx.measureText(line).width), 0);
+      const bubbleWidth = textWidth + padding * 2;
+      const bubbleHeight = lines.length * lineHeight + padding * 2;
+      const bubbleX = Math.round(offsetX + ch.x * zoom - bubbleWidth / 2);
+      const bubbleY = Math.round(
+        offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - bubbleHeight - tail - 2 * zoom,
+      );
+
+      ctx.fillStyle = CHAT_BUBBLE_BG;
+      ctx.strokeStyle = CHAT_BUBBLE_BORDER;
+      ctx.lineWidth = Math.max(1, zoom);
+      ctx.fillRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight);
+      ctx.strokeRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight);
+      ctx.beginPath();
+      ctx.moveTo(offsetX + ch.x * zoom - tail, bubbleY + bubbleHeight);
+      ctx.lineTo(offsetX + ch.x * zoom, bubbleY + bubbleHeight + tail);
+      ctx.lineTo(offsetX + ch.x * zoom + tail, bubbleY + bubbleHeight);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = CHAT_BUBBLE_TEXT;
+      lines.forEach((line, index) => {
+        ctx.fillText(line, bubbleX + padding, bubbleY + padding + index * lineHeight);
+      });
+      ctx.restore();
+      continue;
+    }
+
+    const sprite =
+      ch.bubbleType === 'permission' ? BUBBLE_PERMISSION_SPRITE : BUBBLE_WAITING_SPRITE;
+    const cached = getCachedSprite(sprite, zoom);
     const bubbleX = Math.round(offsetX + ch.x * zoom - cached.width / 2);
     const bubbleY = Math.round(
       offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - cached.height - 1 * zoom,
     );
 
-    ctx.save();
-    if (alpha < 1.0) ctx.globalAlpha = alpha;
     ctx.drawImage(cached, bubbleX, bubbleY);
     ctx.restore();
   }

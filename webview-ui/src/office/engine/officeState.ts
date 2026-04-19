@@ -109,8 +109,7 @@ export class OfficeState {
       (ch) =>
         !ch.isSubagent &&
         !ch.isActive &&
-        ch.state === CharacterState.IDLE &&
-        ch.path.length === 0 &&
+        (ch.state === CharacterState.IDLE || ch.state === CharacterState.WALK) &&
         ch.matrixEffect === null &&
         ch.chatPartnerId === null &&
         ch.bubbleType !== 'permission' &&
@@ -121,7 +120,9 @@ export class OfficeState {
       ch.chatCooldown = Math.max(0, ch.chatCooldown - dt);
     }
 
-    const available = idleCandidates.filter((ch) => ch.chatCooldown <= 0);
+    const available = idleCandidates.filter(
+      (ch) => ch.chatCooldown <= 0 && (ch.state === CharacterState.WALK || ch.wanderCount > 0),
+    );
     for (const ch of available) {
       if (ch.chatPartnerId !== null) continue;
       let partner: Character | null = null;
@@ -440,6 +441,7 @@ export class OfficeState {
     if (folderName) {
       ch.folderName = folderName;
     }
+    ch.chatCooldown = this.randomIdleChatDelay();
     if (!skipSpawnEffect) {
       ch.matrixEffect = 'spawn';
       ch.matrixEffectTimer = 0;
@@ -851,6 +853,8 @@ export class OfficeState {
         updateCharacter(ch, dt, this.walkableTiles, this.seats, this.tileMap, this.blockedTiles),
       );
 
+      this.updateIdleChat(ch, dt);
+
       // Tick bubble timer for waiting bubbles
       if (ch.bubbleType === 'waiting') {
         ch.bubbleTimer -= dt;
@@ -860,6 +864,8 @@ export class OfficeState {
         }
       }
     }
+
+    this.maybeStartIdleChats(dt);
     // Remove characters that finished despawn
     for (const id of toDelete) {
       this.characters.delete(id);
