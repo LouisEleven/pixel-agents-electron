@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import namesData from '../data/names.json';
-import { AGENT_HUE_PRESETS } from '../constants.js';
+import { AGENT_HUE_PRESETS, PALETTE_COUNT } from '../constants.js';
 import { useI18n } from '../i18n.tsx';
 import { getCachedSprite } from '../office/sprites/spriteCache.js';
-import { getCharacterSprites } from '../office/sprites/spriteData.js';
+import { getLoadedCharacterCount, getCharacterSprites } from '../office/sprites/spriteData.js';
 import { Direction } from '../office/types.js';
 import type { WorkspaceFolder } from '../hooks/useExtensionMessages.js';
 import { Modal } from './ui/Modal.js';
@@ -27,11 +27,15 @@ interface CreateAgentModalProps {
 
 type Gender = 'male' | 'female';
 
-const MALE_PALETTES = [0, 2, 4] as const;
-const FEMALE_PALETTES = [1, 3, 5] as const;
+const DEFAULT_MALE_PALETTES = [0, 2, 4] as const;
 
-function getPalettesForGender(gender: Gender): readonly number[] {
-  return gender === 'male' ? MALE_PALETTES : FEMALE_PALETTES;
+function getPalettesForGender(gender: Gender, paletteCount: number): readonly number[] {
+  const allPalettes = Array.from({ length: Math.max(paletteCount, PALETTE_COUNT) }, (_, index) => index);
+  const malePalettes = DEFAULT_MALE_PALETTES.filter((palette) => palette < allPalettes.length);
+  const femalePalettes = allPalettes.filter(
+    (palette) => !malePalettes.some((malePalette) => malePalette === palette),
+  );
+  return gender === 'male' ? malePalettes : femalePalettes;
 }
 
 export function CreateAgentModal({
@@ -47,7 +51,11 @@ export function CreateAgentModal({
   const [name, setName] = useState('');
   const [selectedFolderPath, setSelectedFolderPath] = useState('');
 
-  const paletteOptions = useMemo(() => getPalettesForGender(gender), [gender]);
+  const loadedPaletteCount = getLoadedCharacterCount();
+  const paletteOptions = useMemo(
+    () => getPalettesForGender(gender, loadedPaletteCount),
+    [gender, loadedPaletteCount],
+  );
   const suggestedNames = useMemo(() => namesData[gender], [gender]);
 
   useEffect(() => {

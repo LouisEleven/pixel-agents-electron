@@ -95,7 +95,7 @@ export function BottomToolbar({
     void openClaude({
       cwd: folder.path,
       name: folder.name,
-      palette: 0,
+      palette: 1,
       hueShift: 0,
     });
   };

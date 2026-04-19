@@ -173,7 +173,7 @@ export function useExtensionMessages(
         const folderName = msg.folderName as string | undefined;
         const customName = msg.name as string | undefined;
         const palette =
-          typeof msg.palette === 'number' ? (msg.palette as number) : Math.floor(Math.random() * 6);
+          typeof msg.palette === 'number' ? (msg.palette as number) : Math.floor(Math.random() * 8);
         const hueShift = typeof msg.hueShift === 'number' ? (msg.hueShift as number) : 0;
         const generatedName = generateRandomName(palette);
         const name = customName || generatedName;
@@ -254,7 +254,7 @@ export function useExtensionMessages(
             });
           }
           const customName = customNames[id];
-          const name = customName || generateRandomName(m?.palette ?? Math.floor(Math.random() * 6));
+          const name = customName || generateRandomName(m?.palette ?? Math.floor(Math.random() * 8));
           setAgentNames((prev) => ({ ...prev, [id]: name }));
         }
         setAgents((prev) => {

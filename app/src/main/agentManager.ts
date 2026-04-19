@@ -75,7 +75,7 @@ export class AgentManager {
       seenUnknownRecordTypes: new Set(),
       hookDelivered: false,
       folderName,
-      palette: existingRecord?.palette ?? preferredPalette ?? Math.floor(Math.random() * 6),
+      palette: existingRecord?.palette ?? preferredPalette ?? Math.floor(Math.random() * 8),
       hueShift: existingRecord?.hueShift ?? preferredHueShift ?? 0,
       name: existingRecord?.name ?? preferredName,
       history: existingRecord?.memory ? JSON.parse(existingRecord.memory) : [],
