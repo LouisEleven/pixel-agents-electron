@@ -221,6 +221,7 @@ function App() {
             zoom={editor.zoom}
             onZoomChange={editor.handleZoomChange}
             panRef={editor.panRef}
+            hasLabelOverlay={alwaysShowOverlay}
           />
         ) : (
           <div className="h-full">

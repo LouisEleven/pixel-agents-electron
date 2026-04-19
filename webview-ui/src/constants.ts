@@ -139,6 +139,7 @@ export const CHAT_BUBBLE_MAX_WIDTH_PX = 92;
 export const CHAT_BUBBLE_PADDING_PX = 4;
 export const CHAT_BUBBLE_LINE_HEIGHT_PX = 8;
 export const CHAT_BUBBLE_TAIL_SIZE_PX = 4;
+export const CHAT_BUBBLE_LABEL_CLEARANCE_PX = 22;
 export const CHAT_BUBBLE_BG = '#f4ecd8';
 export const CHAT_BUBBLE_BORDER = '#3d3558';
 export const CHAT_BUBBLE_TEXT = '#2f2942';

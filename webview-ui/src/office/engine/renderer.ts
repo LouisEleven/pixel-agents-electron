@@ -13,6 +13,7 @@ import {
   CHARACTER_Z_SORT_OFFSET,
   CHAT_BUBBLE_BG,
   CHAT_BUBBLE_BORDER,
+  CHAT_BUBBLE_LABEL_CLEARANCE_PX,
   CHAT_BUBBLE_LINE_HEIGHT_PX,
   CHAT_BUBBLE_MAX_WIDTH_PX,
   CHAT_BUBBLE_PADDING_PX,
@@ -516,6 +517,7 @@ function renderBubbles(
   offsetX: number,
   offsetY: number,
   zoom: number,
+  hasLabelOverlay: boolean,
 ): void {
   for (const ch of characters) {
     if (!ch.bubbleType) continue;
@@ -542,8 +544,14 @@ function renderBubbles(
       const bubbleWidth = textWidth + padding * 2;
       const bubbleHeight = lines.length * lineHeight + padding * 2;
       const bubbleX = Math.round(offsetX + ch.x * zoom - bubbleWidth / 2);
+      const extraLabelOffset = hasLabelOverlay ? CHAT_BUBBLE_LABEL_CLEARANCE_PX * zoom : 0;
       const bubbleY = Math.round(
-        offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - bubbleHeight - tail - 8 * zoom,
+        offsetY +
+          (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom -
+          bubbleHeight -
+          tail -
+          8 * zoom -
+          extraLabelOffset,
       );
 
       ctx.fillStyle = CHAT_BUBBLE_BG;
@@ -640,6 +648,7 @@ export function renderFrame(
   tileColors?: Array<ColorValue | null>,
   layoutCols?: number,
   layoutRows?: number,
+  hasLabelOverlay = false,
 ): { offsetX: number; offsetY: number } {
   // Clear
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -681,7 +690,7 @@ export function renderFrame(
   renderScene(ctx, allFurniture, characters, offsetX, offsetY, zoom, selectedId, hoveredId);
 
   // Speech bubbles (always on top of characters)
-  renderBubbles(ctx, characters, offsetX, offsetY, zoom);
+  renderBubbles(ctx, characters, offsetX, offsetY, zoom, hasLabelOverlay);
 
   // Editor overlays
   if (editor) {
