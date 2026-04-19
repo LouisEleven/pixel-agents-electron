@@ -119,10 +119,10 @@ export function updateCharacter(
     if (!ch.isActive) {
       ch.seatTimer -= dt;
       if (ch.seatTimer <= 0) {
-        // Start wandering
         ch.seatTimer = INACTIVE_SEAT_TIMER_MIN_SEC + Math.random() * INACTIVE_SEAT_TIMER_RANGE_SEC;
         ch.state = CharacterState.IDLE;
         ch.wanderCount = 0;
+        ch.wanderTimer = 1 / WANDER_CHANCE_PER_SEC;
       }
     }
   }

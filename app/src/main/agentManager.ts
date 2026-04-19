@@ -346,7 +346,7 @@ export class AgentManager {
         agent.hadToolsInTurn = false;
 
         this.onEvent?.({ type: 'agentToolsClear', id: agentId });
-        this.onEvent?.({ type: 'agentStatus', id: agentId, status: 'waiting' });
+        this.onEvent?.({ type: 'agentStatus', id: agentId, status: 'idle' });
       }
     } catch {
       // Ignore malformed lines

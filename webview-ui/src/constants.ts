@@ -15,8 +15,9 @@ export const WANDER_PAUSE_MIN_SEC = 2.0;
 export const WANDER_PAUSE_MAX_SEC = 20.0;
 export const WANDER_MOVES_BEFORE_REST_MIN = 3;
 export const WANDER_MOVES_BEFORE_REST_MAX = 6;
-export const SEAT_REST_MIN_SEC = 120.0;
-export const SEAT_REST_MAX_SEC = 240.0;
+export const STARTUP_WANDER_DELAY_SEC = 5.0;
+export const SEAT_REST_MIN_SEC = 10.0;
+export const SEAT_REST_MAX_SEC = 24.0;
 
 // ── Matrix Effect ────────────────────────────────────────────
 export const MATRIX_EFFECT_DURATION_SEC = 0.3;
@@ -37,6 +38,8 @@ export const MATRIX_TRAIL_DIM_THRESHOLD = 0.66;
 
 // ── Rendering ────────────────────────────────────────────────
 export const CHARACTER_SITTING_OFFSET_PX = 6;
+export const CHARACTER_SEATED_BOB_AMPLITUDE_PX = 1;
+export const CHARACTER_SEATED_SWAY_AMPLITUDE_PX = 1;
 export const CHARACTER_Z_SORT_OFFSET = 0.5;
 export const OUTLINE_Z_SORT_OFFSET = 0.001;
 export const SELECTED_OUTLINE_ALPHA = 1.0;

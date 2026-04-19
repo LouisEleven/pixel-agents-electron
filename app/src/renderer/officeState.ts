@@ -16,6 +16,7 @@ import {
   WANDER_LIMIT,
   INACTIVE_SEAT_TIMER_MIN_SEC,
   INACTIVE_SEAT_TIMER_RANGE_SEC,
+  STARTUP_WANDER_DELAY_SEC,
   MATRIX_EFFECT_DURATION_SEC,
   WAITING_BUBBLE_DURATION_SEC,
   DISMISS_BUBBLE_FAST_FADE_SEC,
@@ -143,7 +144,7 @@ export class OfficeState {
       seatId: assignedSeatId,
       bubbleType: null,
       bubbleTimer: 0,
-      seatTimer: INACTIVE_SEAT_TIMER_MIN_SEC,
+      seatTimer: STARTUP_WANDER_DELAY_SEC,
       isSubagent: false,
       parentAgentId: null,
       matrixEffect: 'spawn',
@@ -264,15 +265,20 @@ export class OfficeState {
           ch.frame = (ch.frame + 1) % 4;
         }
 
-        if (ch.path.length === 0 && ch.seatId) {
-          ch.state = CharacterState.TYPE;
+        if (ch.path.length === 0) {
+          const seat = ch.seatId ? this.seats.get(ch.seatId) ?? null : null;
+          const isAtSeat = !!seat && ch.tileCol === seat.seatCol && ch.tileRow === seat.seatRow;
+          ch.state = isAtSeat && ch.isActive ? CharacterState.TYPE : CharacterState.IDLE;
           ch.frame = 0;
         }
         continue;
       }
 
-      // At seat
-      if (ch.seatId) {
+      const seat = ch.seatId ? this.seats.get(ch.seatId) ?? null : null;
+      const isAtSeat = !!seat && ch.tileCol === seat.seatCol && ch.tileRow === seat.seatRow;
+
+      // Only apply seated behavior when actually on the seat tile.
+      if (isAtSeat) {
         ch.state = ch.isActive ? CharacterState.TYPE : CharacterState.IDLE;
         if (!ch.isActive) {
           ch.seatTimer -= dt;
@@ -280,12 +286,30 @@ export class OfficeState {
             ch.seatTimer =
               INACTIVE_SEAT_TIMER_MIN_SEC + Math.random() * INACTIVE_SEAT_TIMER_RANGE_SEC;
             ch.wanderCount = 0;
+            ch.wanderTimer = 0;
+            const wanderTargets = this.walkableTiles.filter(
+              (tile) => tile.col !== ch.tileCol || tile.row !== ch.tileRow,
+            );
+            if (wanderTargets.length > 0) {
+              const target = wanderTargets[Math.floor(Math.random() * wanderTargets.length)];
+              ch.path = [{ col: target.col, row: target.row }];
+              ch.state = CharacterState.WALK;
+              ch.wanderCount++;
+            }
           }
         }
+      } else if (ch.isActive) {
+        // Active agents away from seat should head back to seat.
+        if (seat && ch.path.length === 0) {
+          ch.path = [{ col: seat.seatCol, row: seat.seatRow }];
+        }
+        ch.state = ch.path.length > 0 ? CharacterState.WALK : CharacterState.TYPE;
+      } else {
+        ch.state = ch.path.length > 0 ? CharacterState.WALK : CharacterState.IDLE;
       }
 
-      // Idle wandering
-      if (ch.state === CharacterState.IDLE) {
+      // Idle wandering only when not active and not currently seated.
+      if (!ch.isActive && !isAtSeat && ch.state === CharacterState.IDLE) {
         ch.wanderTimer += dt;
         if (ch.wanderTimer >= 1 / WANDER_CHANCE_PER_SEC && ch.wanderCount < ch.wanderLimit) {
           ch.wanderTimer = 0;
@@ -293,17 +317,16 @@ export class OfficeState {
             const target =
               this.walkableTiles[Math.floor(Math.random() * this.walkableTiles.length)];
             ch.path = [{ col: target.col, row: target.row }];
+            ch.state = CharacterState.WALK;
             ch.wanderCount++;
           }
         }
       }
 
-      // Return to seat
-      if (ch.wanderCount >= ch.wanderLimit && ch.seatId && ch.path.length === 0) {
-        const seat = this.seats.get(ch.seatId);
-        if (seat) {
-          ch.path = [{ col: seat.seatCol, row: seat.seatRow }];
-        }
+      // Once we've wandered enough, head back to the assigned seat.
+      if (!ch.isActive && ch.wanderCount >= ch.wanderLimit && seat && !isAtSeat && ch.path.length === 0) {
+        ch.path = [{ col: seat.seatCol, row: seat.seatRow }];
+        ch.state = CharacterState.WALK;
       }
 
       // Bubble timer

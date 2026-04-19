@@ -77,7 +77,7 @@ export interface AgentToolsClearEvent {
 export interface AgentStatusEvent {
   type: 'agentStatus';
   id: number;
-  status: 'waiting' | 'active';
+  status: 'waiting' | 'active' | 'idle';
 }
 
 export type AgentEvent =
